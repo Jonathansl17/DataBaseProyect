@@ -16,7 +16,7 @@ export const clearConnection = async () => {
     }
 
     if (!currentConnection.connected || !currentConnection.ready) {
-      console.log('Connection was not active or already closed.');
+      console.log('Connection was not active or already closed...');
       currentConnection = null; 
       return; 
     }
