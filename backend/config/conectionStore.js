@@ -21,7 +21,7 @@ export const clearConnection = async () => {
       return; 
     }
 
-    console.log('Closing active SQL Server connection...');
+    console.log('Closing active SQL Server connection');
     await currentConnection.close();
     console.log('Connection closed successfully.');
     currentConnection = null;
