@@ -20,6 +20,20 @@ const OtraPagina = () => {
         }
     }
 
+    const desconectar = async()=>{
+        try{
+            const response = await fetch("http://localhost:3100/connection/disconnect",{
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+        }catch(error ){
+            console.error(error)
+        }
+    }
+
 
     return (
         <div className="flex flex-col items-center justify-center h-screen">
@@ -36,7 +50,8 @@ const OtraPagina = () => {
             </button>
 
             <Link href="/">
-                <button className="bg-blue-500 text-white px-4 py-2 rounded">
+                <button className="bg-blue-500 text-white px-4 py-2 rounded"
+                onClick={desconectar}>
                     Volver a la página principal
                 </button>
             </Link>

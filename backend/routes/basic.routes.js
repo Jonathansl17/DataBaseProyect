@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 
-import helloWorldController from "../controllers/basicController.js";
+import helloWorldController from "../controllers/basic.controller.js";
 
 const router = Router();
 
