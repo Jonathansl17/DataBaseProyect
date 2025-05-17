@@ -35,7 +35,7 @@ export default function Home() {
       if (data.success) {
         setMessage(data.message);
         setTimeout(() => {
-          router.push("/otrapagina");
+          router.push("/vista_clientes");
         }, 1000);
       } else {
         setMessage(`Error: ${data.message}`);

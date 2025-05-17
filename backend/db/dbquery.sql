@@ -2,6 +2,7 @@
 -- CREATE DATABASE fastfitness;
 -- USE fastfitness;
 
+
 -- Tabla provincias
 CREATE TABLE provincias(
 	id_provincia TINYINT			NOT NULL,
@@ -37,6 +38,7 @@ CREATE TABLE persona(
 	cedula INT				NOT NULL,
 	nombre VARCHAR(20)		NOT NULL,
 	apellido1 VARCHAR(20)	NOT NULL,
+	apellido2 VARCHAR(20)	NOT NULL,
 	genero TINYINT			NOT NULL,
 	distrito SMALLINT		NOT NULL,
 	correo VARCHAR(50)		NOT NULL,
@@ -378,90 +380,90 @@ ADD CONSTRAINT CK_grupo_cupos CHECK (cantidad_matriculados <= cupo_disponible);
 
 --Inserciones de prueba a todas las tablas
 -- Tabla provincias
-INSERT INTO provincias VALUES
+INSERT INTO provincias (id_provincia, nombre_provincia) VALUES
 (1, 'San José'), (2, 'Alajuela'), (3, 'Cartago'),
 (4, 'Heredia'), (5, 'Puntarenas'), (6, 'Limón'),
 (7, 'Guanacaste'), (8, 'San Rafael'), (9, 'Desamparados'), (10, 'Escazú');
 
 -- Tabla cantones
-INSERT INTO cantones VALUES
+INSERT INTO cantones (id_canton, provincia, nombre_canton) VALUES
 (1,1,'Central'),(2,2,'San Carlos'),(3,3,'El Guarco'),
 (4,4,'Belén'),(5,5,'Corredores'),(6,6,'Limón'),(7,7,'Liberia'),
 (8,8,'San Rafael'),(9,9,'Desamparados'),(10,10,'Escazú');
 
 -- Tabla distritos
-INSERT INTO distritos VALUES
+INSERT INTO distritos (id_distrito, canton, nombre_distrito) VALUES
 (1,1,'Carmen'),(2,2,'Quesada'),(3,3,'Tejar'),(4,4,'San Antonio'),
 (5,5,'Paso Canoas'),(6,6,'Limón Centro'),(7,7,'Liberia Centro'),
 (8,8,'Centro'),(9,9,'Desamparados Centro'),(10,10,'Escazú Centro');
 
 -- Tabla generos
-INSERT INTO generos VALUES
+INSERT INTO generos (id_genero, genero) VALUES
 (1,'Masculino'),(2,'Femenino');
 
 -- Tabla persona
-INSERT INTO persona VALUES
-(118560552,'Luis','Castro',1,1,'luis@correo.com','1990-05-15',34),
-(203456789,'María','Soto',2,2,'maria@correo.com','1995-03-22',29),
-(304567890,'Carlos','Mora',1,3,'carlos@correo.com','1985-11-30',38),
-(409876543,'Ana','Rojas',2,4,'ana@correo.com','1998-07-09',25),
-(512345678,'Javier','Chacón',1,5,'javier@correo.com','2000-01-01',24),
-(612345678,'Paula','Ramírez',2,6,'paula@correo.com','1994-06-12',30),
-(701234567,'Diego','Fernández',1,7,'diego@correo.com','1992-08-19',32),
-(812345679,'Sofía','Campos',2,8,'sofia@correo.com','1996-12-01',27),
-(902345678,'Marco','Quesada',1,9,'marco@correo.com','1989-02-28',35),
-(100123456,'Valeria','Chinchilla',2,10,'valeria@correo.com','2001-04-04',23);
+INSERT INTO persona (cedula, nombre, apellido1,apellido2, genero, distrito, correo, fecha_nacimiento, edad) VALUES
+(118560552,'Luis','Castro','Madriz',1,1,'luis@correo.com','1990-05-15',34),
+(203456789,'María','Soto','Rodriguez',2,2,'maria@correo.com','1995-03-22',29),
+(304567890,'Carlos','Mora','Vazques',1,3,'carlos@correo.com','1985-11-30',38),
+(409876543,'Ana','Rojas','Mora',2,4,'ana@correo.com','1998-07-09',25),
+(512345678,'Javier','Chacón','Rojas',1,5,'javier@correo.com','2000-01-01',24),
+(612345678,'Paula','Ramírez','Sanchez',2,6,'paula@correo.com','1994-06-12',30),
+(701234567,'Diego','Fernández','Perez',1,7,'diego@correo.com','1992-08-19',32),
+(812345679,'Sofía','Campos','Retana',2,8,'sofia@correo.com','1996-12-01',27),
+(902345678,'Marco','Quesada','Carrera',1,9,'marco@correo.com','1989-02-28',35),
+(100123456,'Valeria','Chinchilla','Lopez',2,10,'valeria@correo.com','2001-04-04',23);
 
 -- Tabla telefonos_personas
-INSERT INTO telefonos_personas VALUES
+INSERT INTO telefonos_personas (cedula_persona, telefono) VALUES
 (118560552,88881234),(203456789,89994321),(304567890,87001234),
 (409876543,88009876),(512345678,86543210),(612345678,89000000),
 (701234567,85005050),(812345679,83003333),(902345678,84555555),
 (100123456,80000001);
 
 -- Tabla entrenador
-INSERT INTO entrenador VALUES
+INSERT INTO entrenador (cedula, fecha_contratacion, tipo) VALUES
 (118560552,'2020-01-01','Personal'),
 (203456789,'2021-06-15','Funcional');
 
 -- Tabla administrador
-INSERT INTO administrador VALUES
+INSERT INTO administrador (cedula, fecha_contratacion) VALUES
 (304567890,'2020-01-01'),
 (409876543,'2021-01-01'),
 (512345678,'2022-01-01');
 
 -- Tabla estados_clientes
-INSERT INTO estados_clientes VALUES
+INSERT INTO estados_clientes (id_estado, estado) VALUES
 (1,'Activo'),(2,'Inactivo'),(3,'Suspendido'),
 (4,'Revisión'),(5,'Retirado'),(6,'Nuevo'),(7,'Congelado'),(8,'Bloqueado'),
 (9,'Prueba'),(10,'Otros');
 
 -- Tabla cliente
-INSERT INTO cliente VALUES
+INSERT INTO cliente (cedula, estado, fecha_registro) VALUES
 (612345678,1,'2022-01-01'),(701234567,2,'2022-02-01'),
 (812345679,3,'2023-01-01'),(902345678,4,'2024-01-01'),
 (100123456,5,'2024-02-01');
 
 -- Tabla tipo_membresia
-INSERT INTO tipo_membresia VALUES
+INSERT INTO tipo_membresia (id_tipo_membresia, tipo) VALUES
 (1,'Mensual'),(2,'Trimestral'),(3,'Anual'),
 (4,'Semestral'),(5,'Diaria'),(6,'Free'),(7,'Promo'),
 (8,'VIP'),(9,'Combo'),(10,'Ilimitado');
 
 -- Tabla membresia
-INSERT INTO membresia VALUES
+INSERT INTO membresia (id_membresia, fecha_expiracion, tipo) VALUES
 (1,'2024-06-01',1),(2,'2024-09-01',2),(3,'2025-05-01',3),
 (4,'2024-12-01',4),(5,'2024-05-04',5),(6,'2024-05-05',6),
 (7,'2024-05-06',7),(8,'2024-05-07',8),(9,'2024-05-08',9),
 (10,'2024-05-09',10);
 
 -- Tabla cliente_membresias
-INSERT INTO cliente_membresias VALUES
+INSERT INTO cliente_membresias (cedula, id_membresia) VALUES
 (612345678,1),(701234567,2),(812345679,3),
 (902345678,4),(100123456,5);
 
 -- Tabla clase
-INSERT INTO clase VALUES
+INSERT INTO clase (id_clase, nombre, descripcion) VALUES
 (1,'Zumba','Ejercicio de baile'),(2,'Spinning','Bicicleta'),
 (3,'Yoga','Estiramiento'),(4,'Crossfit','Alta intensidad'),
 (5,'Pilates','Cuerpo y mente'),(6,'Boxeo','De contacto'),
@@ -469,22 +471,22 @@ INSERT INTO clase VALUES
 (9,'Stretching','Flexibilidad'),(10,'TRX','Con suspensión');
 
 -- Tabla cliente_clase
-INSERT INTO cliente_clase VALUES
+INSERT INTO cliente_clase (cedula, id_clase) VALUES
 (612345678,1),(701234567,2),(812345679,3),
 (902345678,4),(100123456,5);
 
 -- Tabla entrenador_clase
-INSERT INTO entrenador_clase VALUES
+INSERT INTO entrenador_clase (cedula, id_clase) VALUES
 (118560552,6),(203456789,7);
 
 -- Tabla estados_maquinas
-INSERT INTO estados_maquinas VALUES
+INSERT INTO estados_maquinas (id_estado, estado) VALUES
 (1,'Operativa'),(2,'Reparación'),(3,'Fuera servicio'),
 (4,'Mantenimiento'),(5,'Nueva'),(6,'Revisada'),(7,'Desuso'),
 (8,'Reasignada'),(9,'Donada'),(10,'Descompuesta');
 
 -- Tabla maquina
-INSERT INTO maquina VALUES
+INSERT INTO maquina (id_maquina, estado, tipo, modelo, marca) VALUES
 (1,1,'Cardio','X1000','LifeFitness'),(2,2,'Fuerza','P3000','Technogym'),
 (3,3,'Elíptica','E500','Precor'),(4,4,'Caminadora','RunFast','Matrix'),
 (5,5,'Bicicleta','SpinPro','StarTrac'),(6,6,'Remo','R300','Concept2'),
@@ -492,18 +494,18 @@ INSERT INTO maquina VALUES
 (9,9,'Multipower','MPX','Reebok'),(10,10,'Hack','HX100','Sole');
 
 -- Tabla admin_maquina
-INSERT INTO admin_maquina VALUES
+INSERT INTO admin_maquina (cedula, id_maquina, ultima_revision, cant_maquinas) VALUES
 (304567890,1,'2024-01-01',1),(409876543,2,'2024-01-01',1),
 (512345678,3,'2024-01-01',1),(304567890,4,'2024-01-01',1),
 (409876543,5,'2024-01-01',1);
 
 -- Tabla grupo
-INSERT INTO grupo VALUES
+INSERT INTO grupo (numero_grupo, cupo_disponible, cantidad_matriculados) VALUES
 (1,10,5),(2,15,12),(3,20,18),(4,8,7),(5,25,20),
 (6,12,9),(7,16,15),(8,22,21),(9,10,10),(10,30,30);
 
 -- Tabla horario
-INSERT INTO horario VALUES
+INSERT INTO horario (id_horario, dia, hora_inicio, hora_fin) VALUES
 (1,'Lunes','08:00','09:00'),(2,'Martes','09:00','10:00'),
 (3,'Miércoles','10:00','11:00'),(4,'Jueves','11:00','12:00'),
 (5,'Viernes','12:00','13:00'),(6,'Sábado','13:00','14:00'),
@@ -511,13 +513,13 @@ INSERT INTO horario VALUES
 (9,'Martes','16:00','17:00'),(10,'Miércoles','17:00','18:00');
 
 -- Tabla asistencia
-INSERT INTO asistencia VALUES
+INSERT INTO asistencia (id_asistencia, fecha) VALUES
 (1,'2024-05-01'),(2,'2024-05-02'),(3,'2024-05-03'),
 (4,'2024-05-04'),(5,'2024-05-05'),(6,'2024-05-06'),
 (7,'2024-05-07'),(8,'2024-05-08'),(9,'2024-05-09'),(10,'2024-05-10');
 
 -- Tabla sesion
-INSERT INTO sesion VALUES
+INSERT INTO sesion (numero_grupo, id_horario, id_asistencia, id_clase) VALUES
 (1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5),
 (6,6,6,6),(7,7,7,7),(8,8,8,8),(9,9,9,9),(10,10,10,10);
 
@@ -545,3 +547,29 @@ SELECT * FROM grupo;
 SELECT * FROM horario;
 SELECT * FROM asistencia;
 SELECT * FROM sesion;
+
+
+
+--Vista de clientes general
+CREATE VIEW vista_clientes
+AS
+SELECT
+	p.nombre,
+	p.apellido1,
+	p.apellido2,
+    c.cedula,
+    c.fecha_registro,
+    m.fecha_expiracion,
+    tm.tipo AS tipo_membresia,
+    ec.estado AS estado_cliente
+FROM 
+    cliente c
+	JOIN persona p ON c.cedula = p.cedula
+    JOIN cliente_membresias cm ON c.cedula = cm.cedula
+    JOIN membresia m ON cm.id_membresia = m.id_membresia
+    JOIN tipo_membresia tm ON m.tipo = tm.id_tipo_membresia
+    JOIN estados_clientes ec ON c.estado = ec.id_estado
+
+
+SELECT * FROM vista_clientes
+		
