@@ -4,8 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const router = useRouter();
+  useEffect(() => {
+    localStorage.removeItem("sqlConnection");
+  }, []);
 
+  const router = useRouter();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
