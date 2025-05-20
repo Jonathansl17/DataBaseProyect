@@ -593,7 +593,7 @@ GO
 
 --Procedimiento almacenado transaccional para insertar un cliente
 CREATE PROCEDURE insertar_cliente (
-    @cedula INT,
+    @cedula CedulaRestringida,
     @nombre VARCHAR(20),
     @apellido1 VARCHAR(20),
     @apellido2 VARCHAR(20),
@@ -662,6 +662,4 @@ END;
 --    @correo = 'juan@example.com',
 --   @fecha_nacimiento = '1990-05-19',
 --    @edad = 35;
-
-
 
