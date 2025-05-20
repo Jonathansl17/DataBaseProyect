@@ -2,6 +2,22 @@
 -- CREATE DATABASE fastfitness;
 -- USE fastfitness;
 
+--USE master
+--DROP DATABASE fastfitness
+
+
+--Regla de restriccion para la cedula, para que el formato sea exactamente 9 numeros sin signos ni letras
+CREATE RULE ReglaCedulaNumerica AS
+    @cedula LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]';
+GO
+
+--Creamos el tipo de dato cedulaRestringida
+EXEC	sp_addtype	CedulaRestringida,	'CHAR(9)',	'NOT NULL'
+GO
+
+--Asociamos la regla con el tipo de dato cedulaRestringida
+EXEC	sp_bindrule	'ReglaCedulaNumerica', 'CedulaRestringida'
+
 
 -- Tabla provincias
 CREATE TABLE provincias(
@@ -35,12 +51,12 @@ CREATE TABLE generos(
 
 -- Tabla persona
 CREATE TABLE persona(
-	cedula INT				NOT NULL,
-	nombre VARCHAR(20)		NOT NULL,
-	apellido1 VARCHAR(20)	NOT NULL,
-	apellido2 VARCHAR(20)	NOT NULL,
-	genero TINYINT			NOT NULL,
-	distrito SMALLINT		NOT NULL,
+	cedula CedulaRestringida	NOT NULL,
+	nombre VARCHAR(20)			NOT NULL,
+	apellido1 VARCHAR(20)		NOT NULL,
+	apellido2 VARCHAR(20)		NOT NULL,
+	genero TINYINT				NOT NULL,
+	distrito SMALLINT			NOT NULL,
 	correo VARCHAR(50)		NOT NULL,
 	fecha_nacimiento		DATE NOT NULL DEFAULT GETDATE(),
 	edad TINYINT,
@@ -49,8 +65,8 @@ CREATE TABLE persona(
 
 -- Tabla telefonos_personas
 CREATE TABLE telefonos_personas (
-	cedula_persona INT NOT NULL,
-	telefono INT NOT NULL,
+	cedula_persona CedulaRestringida NOT NULL,
+	telefono INT					 NOT NULL,
 	PRIMARY KEY (cedula_persona, telefono),
 	CONSTRAINT FK_cedula_persona_tel FOREIGN KEY (cedula_persona) REFERENCES persona(cedula)
 	ON DELETE CASCADE
@@ -59,9 +75,9 @@ CREATE TABLE telefonos_personas (
 
 -- Tabla entrenador
 CREATE TABLE entrenador(
-	cedula INT				NOT NULL,
-	fecha_contratacion DATE NOT NULL DEFAULT GETDATE(),
-	tipo VARCHAR(20)		NOT NULL,
+	cedula  CedulaRestringida			NOT NULL,
+	fecha_contratacion DATE				NOT NULL DEFAULT GETDATE(),
+	tipo VARCHAR(20)					NOT NULL,
 	CONSTRAINT PK_cedula_entrenador PRIMARY KEY(cedula),
 	CONSTRAINT FK_entrenador_persona FOREIGN KEY(cedula) REFERENCES persona(cedula)
 	ON DELETE CASCADE
@@ -70,7 +86,7 @@ CREATE TABLE entrenador(
 
 -- Tabla administrador
 CREATE TABLE administrador(
-	cedula INT				NOT NULL,
+	cedula CedulaRestringida				NOT NULL,
 	fecha_contratacion DATE NOT NULL DEFAULT GETDATE(),
 	CONSTRAINT PK_cedula_administrador PRIMARY KEY(cedula),
 	CONSTRAINT FK_administrador_persona FOREIGN KEY(cedula) REFERENCES persona(cedula)
@@ -81,9 +97,9 @@ CREATE TABLE administrador(
 
 --Tabla clientes
 CREATE TABLE cliente(
-	cedula			INT			NOT NULL,
-	estado			TINYINT		NOT NULL,
-	fecha_registro	DATE		NOT NULL DEFAULT GETDATE(),
+	cedula			 CedulaRestringida		NOT NULL,
+	estado			TINYINT					NOT NULL,
+	fecha_registro	DATE					NOT NULL DEFAULT GETDATE(),
 
 	CONSTRAINT PK_cedula_cliente PRIMARY KEY(cedula),
 	CONSTRAINT FK_cliente_persona FOREIGN KEY(cedula) REFERENCES persona(cedula)
@@ -101,8 +117,8 @@ CREATE TABLE estados_clientes(
 
 --Tabla intermedia clientes_membresias
 CREATE TABLE cliente_membresias(
-	cedula			INT	NOT NULL,
-	id_membresia	INT	NOT NULL,
+	cedula			 CedulaRestringida	NOT NULL,
+	id_membresia	INT					NOT NULL,
 
 	CONSTRAINT PK_cliente_membresias PRIMARY KEY(cedula, id_membresia)
 )
@@ -129,8 +145,8 @@ CREATE TABLE tipo_membresia(
 
 --Tabla intermedia de cliente_clase
 CREATE TABLE cliente_clase(
-	cedula		INT	NOT NULL,
-	id_clase	INT	NOT NULL
+	cedula		 CedulaRestringida	NOT NULL,
+	id_clase	 INT				NOT NULL
 	
 	CONSTRAINT PK_cliente_clase PRIMARY KEY(cedula, id_clase)
 )
@@ -157,10 +173,10 @@ CREATE TABLE maquina(
 
 -- Tabla intermedia admin_maquina
 CREATE TABLE admin_maquina(
-	cedula INT NOT NULL,
-	id_maquina INT NOT NULL,
-	ultima_revision DATE NOT NULL DEFAULT GETDATE(),
-	cant_maquinas INT NOT NULL,
+	cedula  CedulaRestringida	NOT NULL,
+	id_maquina INT				NOT NULL,
+	ultima_revision DATE		NOT NULL,
+	cant_maquinas INT			NOT NULL,
 	CONSTRAINT PK_admin_maquina PRIMARY KEY (cedula, id_maquina)
 );
 
@@ -176,8 +192,8 @@ CREATE TABLE clase(
 
 --Tabla intermedia entrenador_clase
 CREATE TABLE entrenador_clase(
-	cedula	 INT	NOT NULL,
-	id_clase INT	NOT NULL
+	cedula	  CedulaRestringida	NOT NULL,
+	id_clase INT				NOT NULL
 
 	CONSTRAINT PK_entrenador_clase PRIMARY KEY(cedula, id_clase) 
 )
@@ -547,7 +563,7 @@ SELECT * FROM grupo;
 SELECT * FROM horario;
 SELECT * FROM asistencia;
 SELECT * FROM sesion;
-
+GO
 
 
 --Vista de clientes general
@@ -569,7 +585,83 @@ FROM
     JOIN membresia m ON cm.id_membresia = m.id_membresia
     JOIN tipo_membresia tm ON m.tipo = tm.id_tipo_membresia
     JOIN estados_clientes ec ON c.estado = ec.id_estado
-
+	GO
 
 SELECT * FROM vista_clientes
-		
+GO
+
+
+--Procedimiento almacenado transaccional para insertar un cliente
+CREATE PROCEDURE insertar_cliente (
+    @cedula INT,
+    @nombre VARCHAR(20),
+    @apellido1 VARCHAR(20),
+    @apellido2 VARCHAR(20),
+    @genero TINYINT,
+    @distrito SMALLINT,
+    @correo VARCHAR(50),
+    @fecha_nacimiento DATE,
+    @edad TINYINT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF EXISTS (SELECT 1 FROM persona WHERE cedula = @cedula)
+        BEGIN
+            RAISERROR('El cliente ya existe', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        IF NOT EXISTS (SELECT * FROM distritos WHERE id_distrito = @distrito)
+        BEGIN
+            RAISERROR('El distrito no existe', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+
+        INSERT INTO persona (
+            cedula, nombre, apellido1, apellido2,
+            genero, distrito, correo,
+            fecha_nacimiento, edad
+        )
+        VALUES (
+            @cedula, @nombre, @apellido1, @apellido2,
+            @genero, @distrito, @correo,
+            @fecha_nacimiento, @edad
+        );
+
+
+        INSERT INTO cliente (cedula, estado)
+        VALUES (@cedula, 1);
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        DECLARE @mensaje_error NVARCHAR(4000) = ERROR_MESSAGE();
+
+        IF XACT_STATE() != 0
+            ROLLBACK TRANSACTION;
+
+        RAISERROR(@mensaje_error, 16, 1);
+    END CATCH
+END;
+
+
+
+--EXEC insertar_cliente
+--    @cedula = 880123236,
+--    @nombre = 'Juan',
+--    @apellido1 = 'Pérez',
+--   @apellido2 = 'Gómez',
+--    @genero = 1,
+--   @distrito = 1,  
+--    @correo = 'juan@example.com',
+--   @fecha_nacimiento = '1990-05-19',
+--    @edad = 35;
+
+
+
