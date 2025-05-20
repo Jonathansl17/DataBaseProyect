@@ -4,9 +4,28 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
-  useEffect(() => {
-    localStorage.removeItem("sqlConnection");
-  }, []);
+  //Esto es para desconectarse apenas se entra y evitar que se quede la conexión abierta jaja digales arrieta quien manda
+useEffect(() => {
+  const desconectar = async () => {
+    try {
+      const result = await fetch("http://localhost:3100/connection/disconnect", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (result.ok) {
+        localStorage.removeItem("sqlConnection");
+      }
+    } catch (err) {
+      console.error("Error desconectando automáticamente:", err);
+    }
+  };
+
+  desconectar();
+}, []);
+
 
   const router = useRouter();
   const [formData, setFormData] = useState({
