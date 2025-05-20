@@ -47,6 +47,10 @@ export const disconnectFromSqlServer = (req,res)=>{
     try{
         clearConnection()
         console.log("Connection succesfully closed to sql servere");
+        res.json({
+            success:true,
+            message:"Connection succesfully closed to sql server"
+        })
     }catch(err){
         console.error("Error connecting to sql server");
         res.status(500).json({
