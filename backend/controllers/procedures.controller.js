@@ -57,3 +57,42 @@ export const insertar_cliente = async (req, res) => {
         });
     }
 };
+
+
+export const eliminar_persona = async(req,res)=>{
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active SQL Server connection",
+        });
+    }
+
+    const { cedula } = req.body;
+
+    if (!cedula) {
+        return res.status(400).json({
+            success: false,
+            message: "La cedula es obligatoria"
+        });
+    }
+
+    try {
+        const result = await connection
+            .request()
+            .input("cedula", sql.Char(9), cedula)
+            .execute("eliminar_persona");
+
+        res.status(200).json({
+            success: true,
+            message: "Cliente eliminado correctamente"
+        });
+    } catch (err) {
+        console.error("Error executing eliminar_persona procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}

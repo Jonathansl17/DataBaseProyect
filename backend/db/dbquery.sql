@@ -665,7 +665,43 @@ BEGIN
         RAISERROR(@mensaje_error, 16, 1);
     END CATCH
 END;
+GO
 
+
+--Procedimiento almacenado transaccional para eliminar una persona, como ya la tabla persona tiene
+--ON DELETE CASCADE, solo hace falta hacer validaciones para borrar a la persona de la base de datos
+CREATE PROCEDURE eliminar_persona(
+	@cedula CedulaRestringida
+)
+AS
+BEGIN
+
+	BEGIN TRY
+		BEGIN TRANSACTION
+			IF NOT EXISTS(
+			SELECT 1 FROM persona WHERE cedula = @cedula
+			)
+			BEGIN
+				RAISERROR('La persona no existe en la base de datos',16,1)
+				ROLLBACK TRANSACTION;
+				RETURN;
+			END
+
+		DELETE FROM persona WHERE cedula = @cedula
+		COMMIT TRANSACTION;
+	END TRY
+
+	BEGIN CATCH
+		DECLARE @mensaje_error NVARCHAR(4000) = ERROR_MESSAGE();
+
+		IF XACT_STATE() != 0
+			BEGIN
+			ROLLBACK TRANSACTION
+			END
+
+		RAISERROR(@mensaje_error, 16, 1);
+	END CATCH
+END;
 
 
 --EXEC insertar_cliente
@@ -678,4 +714,8 @@ END;
 --    @correo = 'juan@example.com',
 --   @fecha_nacimiento = '1990-05-19',
 --    @edad = 35;
+
+
+--EXEC eliminar_persona '100123456'
+--SELECT * FROM persona WHERE cedula = '100123456'
 
