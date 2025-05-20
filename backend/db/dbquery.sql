@@ -15,8 +15,23 @@ GO
 EXEC	sp_addtype	CedulaRestringida,	'CHAR(9)',	'NOT NULL'
 GO
 
---Asociamos la regla con el tipo de dato cedulaRestringida
+--Asociamos la regla ReglaCedulaNumerica con el tipo de dato CedulaRestringida
 EXEC	sp_bindrule	'ReglaCedulaNumerica', 'CedulaRestringida'
+GO
+
+
+--Regla de restriccion para validar correos, formato basico algo@algo.algo
+CREATE RULE ReglaCorreo AS 
+    @correo LIKE '_%@__%.__%'; --Validacion basica de correo
+GO
+
+--Creamos el tipo de dato CorreoRestringido
+EXEC sp_addtype CorreoRestringido, 'VARCHAR(100)', 'NOT NULL'
+GO
+
+--Asociamos la regla ReglaCorreo el tipo de dato CorreoRestringido 
+EXEC sp_bindrule 'ReglaCorreo', 'CorreoRestringido'
+
 
 
 -- Tabla provincias
@@ -25,6 +40,7 @@ CREATE TABLE provincias(
 	nombre_provincia VARCHAR(20)	NOT NULL,
 	CONSTRAINT PK_id_provincia_provincias PRIMARY KEY(id_provincia)
 );
+
 
 -- Tabla cantones
 CREATE TABLE cantones(
@@ -57,8 +73,8 @@ CREATE TABLE persona(
 	apellido2 VARCHAR(20)		NOT NULL,
 	genero TINYINT				NOT NULL,
 	distrito SMALLINT			NOT NULL,
-	correo VARCHAR(50)		NOT NULL,
-	fecha_nacimiento		DATE NOT NULL DEFAULT GETDATE(),
+	correo CorreoRestringido	NOT NULL,
+	fecha_nacimiento			DATE NOT NULL DEFAULT GETDATE(),
 	edad TINYINT,
 	CONSTRAINT PK_cedula_personas PRIMARY KEY(cedula)
 );
@@ -599,7 +615,7 @@ CREATE PROCEDURE insertar_cliente (
     @apellido2 VARCHAR(20),
     @genero TINYINT,
     @distrito SMALLINT,
-    @correo VARCHAR(50),
+    @correo CorreoRestringido,
     @fecha_nacimiento DATE,
     @edad TINYINT
 )
