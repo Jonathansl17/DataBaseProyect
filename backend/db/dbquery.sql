@@ -31,6 +31,55 @@ GO
 
 --Asociamos la regla ReglaCorreo el tipo de dato CorreoRestringido 
 EXEC sp_bindrule 'ReglaCorreo', 'CorreoRestringido'
+GO
+
+
+--Regla de restriccion para los telefonos, en costa rica por ejemplo no existen con 0 o 1,
+--pero de 2 para arriba, ejemplo 24470202, 8 numeros exactos
+CREATE RULE ReglaTelefono AS
+	@telefono LIKE '[2-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]';
+GO
+
+--Creamos el tipo de dato TelefonoRestringido
+EXEC sp_addtype TelefonoRestringido, 'CHAR(8)', 'NOT NULL'
+GO
+
+--Asociamos la regla ReglaTelefono el tipo de dato TelefonoRestringido
+EXEC sp_bindrule 'ReglaTelefono', 'TelefonoRestringido'
+GO
+
+
+/*
+Solo permite letras mayusculas y minisculas, incluyendo la tilde y la enie, rechaza cualquier numero
+o caracter especial como @, asi evitamos que se pongan nombres como XxJos3ProG@merxX*/
+CREATE RULE ReglaNombreYApellidos AS
+	@nombre NOT LIKE '%[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]%';
+GO
+
+--Creamos el tipo de dato ReglaNombreYApellidos
+EXEC sp_addtype  NombreYApellidosLimpios, 'Varchar(20)', 'NOT NULL'
+GO
+
+----Asociamos la regla ReglaNombreYApellidos el tipo de dato ReglaNombreYApellidos
+EXEC sp_bindrule 'ReglaNombreYApellidos', 'NombreYApellidosLimpios'
+GO
+
+
+/* Regla para restriccion de edades, de 5 a 120, por que nadie de menos de 5 anios va a ir al gym, por que 
+a esas edades uno debe estar jugando play todo el dia y viendo tok tok y no mas de 120 por que ya
+despues de ahi estan muy viejitos para hacer ejercicio y pobrecitos, deben descansar de tanto programar
+*/
+CREATE RULE ReglaEdad AS 
+    @edad BETWEEN 5 AND 120;
+GO
+
+-- Creamos el tipo de dato TelefonoRestringido
+EXEC sp_addtype EdadRestringida, 'TINYINT', 'NOT NULL';
+GO
+
+-- Asociar regla
+EXEC sp_bindrule 'ReglaEdad', 'EdadRestringida';
+GO
 
 
 
@@ -67,22 +116,22 @@ CREATE TABLE generos(
 
 -- Tabla persona
 CREATE TABLE persona(
-	cedula CedulaRestringida	NOT NULL,
-	nombre VARCHAR(20)			NOT NULL,
-	apellido1 VARCHAR(20)		NOT NULL,
-	apellido2 VARCHAR(20)		NOT NULL,
-	genero TINYINT				NOT NULL,
-	distrito SMALLINT			NOT NULL,
-	correo CorreoRestringido	NOT NULL,
+	cedula CedulaRestringida			NOT NULL,
+	nombre NombreYApellidosLimpios		NOT NULL,
+	apellido1 NombreYApellidosLimpios	NOT NULL,
+	apellido2 NombreYApellidosLimpios	NOT NULL,
+	genero TINYINT						NOT NULL,
+	distrito SMALLINT					NOT NULL,
+	correo CorreoRestringido			NOT NULL,
 	fecha_nacimiento			DATE NOT NULL DEFAULT GETDATE(),
-	edad TINYINT,
+	edad EdadRestringida		NOT NULL,
 	CONSTRAINT PK_cedula_personas PRIMARY KEY(cedula)
 );
 
 -- Tabla telefonos_personas
 CREATE TABLE telefonos_personas (
-	cedula_persona CedulaRestringida NOT NULL,
-	telefono INT					 NOT NULL,
+	cedula_persona CedulaRestringida	NOT NULL,
+	telefono TelefonoRestringido		NOT NULL,
 	PRIMARY KEY (cedula_persona, telefono),
 	CONSTRAINT FK_cedula_persona_tel FOREIGN KEY (cedula_persona) REFERENCES persona(cedula)
 	ON DELETE CASCADE
@@ -435,7 +484,7 @@ INSERT INTO generos (id_genero, genero) VALUES
 
 -- Tabla persona
 INSERT INTO persona (cedula, nombre, apellido1,apellido2, genero, distrito, correo, fecha_nacimiento, edad) VALUES
-(118560552,'Luis','Castro','Madriz',1,1,'luis@correo.com','1990-05-15',34),
+(118560552,'Luis','Castro','Madriz',1,1,'luis@correo.com','1990-05-15',5),
 (203456789,'María','Soto','Rodriguez',2,2,'maria@correo.com','1995-03-22',29),
 (304567890,'Carlos','Mora','Vazques',1,3,'carlos@correo.com','1985-11-30',38),
 (409876543,'Ana','Rojas','Mora',2,4,'ana@correo.com','1998-07-09',25),
@@ -610,9 +659,9 @@ GO
 --Procedimiento almacenado transaccional para insertar un cliente
 CREATE PROCEDURE insertar_cliente (
     @cedula CedulaRestringida,
-    @nombre VARCHAR(20),
-    @apellido1 VARCHAR(20),
-    @apellido2 VARCHAR(20),
+    @nombre NombreYApellidosLimpios,
+    @apellido1 NombreYApellidosLimpios,
+    @apellido2 NombreYApellidosLimpios,
     @genero TINYINT,
     @distrito SMALLINT,
     @correo CorreoRestringido,
@@ -714,7 +763,6 @@ END;
 --    @correo = 'juan@example.com',
 --   @fecha_nacimiento = '1990-05-19',
 --    @edad = 35;
-
 
 --EXEC eliminar_persona '100123456'
 --SELECT * FROM persona WHERE cedula = '100123456'
