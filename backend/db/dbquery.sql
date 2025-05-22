@@ -650,7 +650,7 @@ SELECT * FROM sesion;
 GO
 
 
---Vista de clientes general
+--Vista de general de todos los clientes
 CREATE VIEW vista_clientes
 AS
 SELECT
@@ -672,6 +672,24 @@ FROM
 	GO
 
 SELECT * FROM vista_clientes
+GO
+
+
+--Vista de clientes con clase actual asignada
+CREATE VIEW vista_clientes_clase_actual
+AS
+SELECT
+	p.nombre AS nombre_cliente,
+	p.apellido1,
+	p.apellido2,
+    c.cedula,
+	cl.nombre AS nombre_clase,
+	cl.descripcion AS descripcion_clase
+FROM
+	cliente c
+	JOIN persona p ON c.cedula = p.cedula
+	JOIN cliente_clase cc ON c.cedula = cc.cedula
+	JOIN clase cl ON cc.id_clase = cl.id_clase
 GO
 
 
@@ -786,4 +804,4 @@ EXEC insertar_cliente
 
 EXEC eliminar_persona '880123236'
 SELECT * FROM persona WHERE cedula = '880123236'
-/*
+*/
