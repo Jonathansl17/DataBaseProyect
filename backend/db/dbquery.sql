@@ -171,6 +171,16 @@ CREATE TABLE cliente(
 	ON UPDATE CASCADE
 )
 
+
+--Tabla asistencia_cliente
+CREATE TABLE asistencia_cliente (
+    id_sesion_programada INT NOT NULL,
+    cedula CedulaRestringida NOT NULL,
+    asistio BIT NOT NULL DEFAULT 1,
+    CONSTRAINT PK_asistencia_cliente PRIMARY KEY (id_sesion_programada, cedula)
+);
+GO
+
 --Tabla estado de clientes
 CREATE TABLE estados_clientes(
 	id_estado	TINYINT				NOT NULL,
@@ -282,24 +292,25 @@ CREATE TABLE horario (
 );
 GO
 
--- Tabla asistencia
-CREATE TABLE asistencia (
-	id_asistencia INT NOT NULL,
-	fecha DATE NOT NULL,
-	CONSTRAINT PK_asistencia PRIMARY KEY (id_asistencia)
-);
-GO
-
 -- Tabla intermedia sesion
 CREATE TABLE sesion (
-	numero_grupo TINYINT NOT NULL,
-	id_horario INT NOT NULL,
-	id_asistencia INT NOT NULL,
-	id_clase INT NOT NULL,
-	CONSTRAINT PK_sesion PRIMARY KEY (numero_grupo, id_horario, id_asistencia, id_clase)
-)
-GO
+    id_sesion INT			NOT NULL,
+    numero_grupo TINYINT	NOT NULL,
+    id_horario INT			NOT NULL,
+    id_clase INT			NOT NULL
 
+	CONSTRAINT PK_sesion_id_sesion PRIMARY KEY(id_sesion)
+);
+
+-- Tabla de sesion programada
+CREATE TABLE sesion_programada (
+    id_sesion_programada INT IDENTITY(1,1) NOT NULL,
+    id_sesion INT			 NOT NULL,
+    fecha DATE				 NOT NULL
+
+	CONSTRAINT sesion_programada_id_sesion_programada PRIMARY KEY(id_sesion_programada)
+);
+GO
 
 
 
@@ -442,19 +453,10 @@ ON UPDATE CASCADE
 GO
 
 
-
 --FK: sesion->horario
 ALTER TABLE sesion
 ADD CONSTRAINT FK_sesion_horario FOREIGN KEY (id_horario)
 REFERENCES horario(id_horario)
-ON DELETE CASCADE
-ON UPDATE CASCADE
-GO
-
---FK: sesion->asistencia
-ALTER TABLE sesion
-ADD CONSTRAINT FK_sesion_asistencia FOREIGN KEY (id_asistencia)
-REFERENCES asistencia(id_asistencia)
 ON DELETE CASCADE
 ON UPDATE CASCADE
 GO
@@ -467,6 +469,30 @@ REFERENCES clase(id_clase)
 ON DELETE CASCADE
 ON UPDATE CASCADE
 GO
+
+
+--FK: sesion_programada -> sesion
+ALTER TABLE sesion_programada
+ADD CONSTRAINT FK_sesion_programada_sesion FOREIGN KEY (id_sesion)
+    REFERENCES sesion(id_sesion) ON DELETE CASCADE ON UPDATE CASCADE;
+GO
+
+--FK: asistencia_cliente -> sesion_programada
+ALTER TABLE asistencia_cliente
+ADD CONSTRAINT FK_asistencia_programada FOREIGN KEY (id_sesion_programada)
+REFERENCES sesion_programada(id_sesion_programada)
+ON DELETE CASCADE
+ON UPDATE CASCADE;
+
+
+--FK: asistencia_cliente -> cliente
+ALTER TABLE asistencia_cliente
+ADD CONSTRAINT FK_asistencia_cliente FOREIGN KEY (cedula)
+REFERENCES cliente(cedula) 
+ON DELETE CASCADE
+ON UPDATE CASCADE;
+GO
+
 
 
 
@@ -537,14 +563,14 @@ INSERT INTO telefonos_personas (cedula_persona, telefono) VALUES
 
 -- Tabla entrenador
 INSERT INTO entrenador (cedula, fecha_contratacion, tipo) VALUES
-(118560552,'2020-01-01','Personal'),
-(203456789,'2021-06-15','Funcional');
+(118560552,'2025-01-01','Personal'),
+(203456789,'2025-06-15','Funcional');
 
 -- Tabla administrador
 INSERT INTO administrador (cedula, fecha_contratacion) VALUES
-(304567890,'2020-01-01'),
-(409876543,'2021-01-01'),
-(512345678,'2022-01-01');
+(304567890,'2025-01-01'),
+(409876543,'2025-01-01'),
+(512345678,'2025-01-01');
 
 -- Tabla estados_clientes
 INSERT INTO estados_clientes (id_estado, estado) VALUES
@@ -554,9 +580,9 @@ INSERT INTO estados_clientes (id_estado, estado) VALUES
 
 -- Tabla cliente
 INSERT INTO cliente (cedula, estado, fecha_registro) VALUES
-(612345678,1,'2022-01-01'),(701234567,2,'2022-02-01'),
-(812345679,3,'2023-01-01'),(902345678,4,'2024-01-01'),
-(100123456,5,'2024-02-01');
+(612345678,1,'2025-01-01'),(701234567,2,'2022-02-01'),
+(812345679,3,'2025-01-01'),(902345678,4,'2024-01-01'),
+(100123456,5,'2025-02-01');
 
 -- Tabla tipo_membresia
 INSERT INTO tipo_membresia (id_tipo_membresia, tipo) VALUES
@@ -566,10 +592,10 @@ INSERT INTO tipo_membresia (id_tipo_membresia, tipo) VALUES
 
 -- Tabla membresia
 INSERT INTO membresia (id_membresia, fecha_expiracion, tipo) VALUES
-(1,'2024-06-01',1),(2,'2024-09-01',2),(3,'2025-05-01',3),
-(4,'2024-12-01',4),(5,'2024-05-04',5),(6,'2024-05-05',6),
-(7,'2024-05-06',7),(8,'2024-05-07',8),(9,'2024-05-08',9),
-(10,'2024-05-09',10);
+(1,'2025-06-01',1),(2,'2025-09-01',2),(3,'2025-05-01',3),
+(4,'2025-12-01',4),(5,'2025-05-04',5),(6,'2025-05-05',6),
+(7,'2025-05-06',7),(8,'2025-05-07',8),(9,'2025-05-08',9),
+(10,'2025-05-09',10);
 
 -- Tabla cliente_membresias
 INSERT INTO cliente_membresias (cedula, id_membresia) VALUES
@@ -609,9 +635,9 @@ INSERT INTO maquina (id_maquina, estado, tipo, modelo, marca) VALUES
 
 -- Tabla admin_maquina
 INSERT INTO admin_maquina (cedula, id_maquina, ultima_revision, cant_maquinas) VALUES
-(304567890,1,'2024-01-01',1),(409876543,2,'2024-01-01',1),
-(512345678,3,'2024-01-01',1),(304567890,4,'2024-01-01',1),
-(409876543,5,'2024-01-01',1);
+(304567890,1,'2025-04-01',1),(409876543,2,'2025-03-01',1),
+(512345678,3,'2025-05-01',1),(304567890,4,'2025-02-01',1),
+(409876543,5,'2025-01-01',1);
 
 -- Tabla grupo
 INSERT INTO grupo (numero_grupo, cupo_disponible, cantidad_matriculados) VALUES
@@ -626,17 +652,30 @@ INSERT INTO horario (id_horario, dia, hora_inicio, hora_fin) VALUES
 (7,'Domingo','14:00','15:00'),(8,'Lunes','15:00','16:00'),
 (9,'Martes','16:00','17:00'),(10,'Miércoles','17:00','18:00');
 
--- Tabla asistencia
-INSERT INTO asistencia (id_asistencia, fecha) VALUES
-(1,'2024-05-01'),(2,'2024-05-02'),(3,'2024-05-03'),
-(4,'2024-05-04'),(5,'2024-05-05'),(6,'2024-05-06'),
-(7,'2024-05-07'),(8,'2024-05-08'),(9,'2024-05-09'),(10,'2024-05-10');
-
 
 -- Tabla sesion
-INSERT INTO sesion (numero_grupo, id_horario, id_asistencia, id_clase) VALUES
+INSERT INTO sesion (id_sesion, numero_grupo, id_horario, id_clase) VALUES
 (1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5),
 (6,6,6,6),(7,7,7,7),(8,8,8,8),(9,9,9,9),(10,10,10,10);
+
+
+-- Insertar sesiones programadas (relacionadas con las sesiones existentes)
+INSERT INTO sesion_programada (id_sesion, fecha) VALUES
+(1, '2025-05-22'), -- Zumba
+(2, '2025-05-22'), -- Spinning
+(3, '2025-05-23'), -- Yoga
+(4, '2025-05-23'), -- Crossfit
+(5, '2025-05-24'); -- Pilates
+
+
+-- Insertar asistencias de los clientes según la clase asignada
+INSERT INTO asistencia_cliente (id_sesion_programada, cedula, asistio) VALUES
+(1, 612345678, 1),  -- Paula a Zumba
+(2, 701234567, 1),  -- Diego a Spinning
+(3, 812345679, 1),  -- Sofía a Yoga
+(4, 902345678, 1),  -- Marco a Crossfit
+(5, 100123456, 1);  -- Valeria a Pilates
+
 
 
 SELECT * FROM provincias;
@@ -660,7 +699,6 @@ SELECT * FROM maquina;
 SELECT * FROM admin_maquina;
 SELECT * FROM grupo;
 SELECT * FROM horario;
-SELECT * FROM asistencia;
 SELECT * FROM sesion;
 GO
 
@@ -744,34 +782,34 @@ SELECT
     ds.hora_inicio,
     ds.hora_fin
 FROM 
-    -- Subconsulta de datos del cliente con clase
-    (
+    (	--Subconsulta de datos de cliente
         SELECT 
             p.cedula,
             p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_cliente,
             cc.id_clase
         FROM cliente_clase cc
         JOIN persona p ON p.cedula = cc.cedula
-    ) AS dc
+    ) AS dc 
 
-    -- Subconsulta de datos de la sesion
-    JOIN (
-        SELECT 
-            s.id_clase,
-            c.nombre AS nombre_clase,
-            c.descripcion AS descripcion_clase,
-            s.numero_grupo,
-            a.fecha AS fecha_sesion,
-            h.dia,
-            h.hora_inicio,
-            h.hora_fin
-        FROM sesion s
-        JOIN clase c ON s.id_clase = c.id_clase
-        JOIN asistencia a ON s.id_asistencia = a.id_asistencia
-        JOIN horario h ON s.id_horario = h.id_horario
-    ) AS ds
+	
+JOIN (
+    SELECT 
+        s.id_clase,
+        c.nombre AS nombre_clase,
+        c.descripcion AS descripcion_clase,
+        s.numero_grupo,
+        sp.fecha AS fecha_sesion,
+        h.dia,
+        h.hora_inicio,
+        h.hora_fin
+    FROM sesion s --Subconsulta de datos de sesion 
+    JOIN clase c ON s.id_clase = c.id_clase
+    JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
+    JOIN horario h ON s.id_horario = h.id_horario
+) AS ds
     ON dc.id_clase = ds.id_clase;
 GO
+
 
 
 --Procedimiento almacenado transaccional para insertar un cliente
@@ -997,3 +1035,68 @@ WHERE p.cedula = '902345678'
 EXEC actualizar_persona '902345678','jony@gmail.com', '54567895'
 
 */
+
+
+--Consulta avanzada 1: Ranking de clientes por numero de clases inscritas de manera descendente
+SELECT 
+    p.cedula,
+    p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_completo,
+    COUNT(cc.id_clase) AS total_clases,
+    RANK() OVER (ORDER BY COUNT(cc.id_clase) DESC) AS posicion
+FROM cliente_clase cc
+JOIN persona p ON cc.cedula = p.cedula
+GROUP BY p.cedula, p.nombre, p.apellido1, p.apellido2;
+
+
+--Consulta avanzada 2: Clientes que tienen membresia vencida
+SELECT 
+    p.cedula,
+    p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_completo,
+    m.fecha_expiracion,
+    DATEDIFF(DAY, m.fecha_expiracion, GETDATE()) AS dias_vencida
+FROM cliente_membresias cm
+JOIN membresia m ON cm.id_membresia = m.id_membresia
+JOIN persona p ON cm.cedula = p.cedula
+WHERE m.fecha_expiracion < GETDATE();
+
+
+--Consulta avanzada 3: Promedio de matriculados por grupo y detección de sobrecupo
+SELECT 
+    numero_grupo,
+    cupo_disponible,
+    cantidad_matriculados,
+    CASE 
+        WHEN cantidad_matriculados > cupo_disponible THEN 'Sobrecupo'
+        WHEN cantidad_matriculados = cupo_disponible THEN 'Lleno'
+        ELSE 'Disponible'
+    END AS estado
+FROM grupo;
+
+
+--Consulta avanzada 4: distribucion de genero por estado de clientes 
+SELECT 
+    ec.estado,
+    SUM(CASE WHEN g.genero = 'Masculino' THEN 1 ELSE 0 END) AS hombres,
+    SUM(CASE WHEN g.genero = 'Femenino' THEN 1 ELSE 0 END) AS mujeres,
+    COUNT(*) AS total
+FROM cliente c
+JOIN persona p ON c.cedula = p.cedula
+JOIN generos g ON p.genero = g.id_genero
+JOIN estados_clientes ec ON c.estado = ec.id_estado
+GROUP BY ec.estado;
+
+
+
+--Consulta avanzada 5: Cuenta la cantidades de sesiones por fecha
+SELECT 
+    c.nombre AS clase,
+    sp.fecha AS fecha_sesion,
+    COUNT(*) AS total_sesiones_en_fecha
+FROM sesion s
+JOIN clase c ON s.id_clase = c.id_clase
+JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
+GROUP BY c.nombre, sp.fecha
+ORDER BY c.nombre, sp.fecha;
+
+
+
