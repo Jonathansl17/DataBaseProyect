@@ -254,6 +254,7 @@ CREATE TABLE clase(
 
 	CONSTRAINT PK_clase_id_clase PRIMARY KEY(id_clase)
 )
+GO
 
 --Tabla intermedia entrenador_clase
 CREATE TABLE entrenador_clase(
@@ -262,7 +263,7 @@ CREATE TABLE entrenador_clase(
 
 	CONSTRAINT PK_entrenador_clase PRIMARY KEY(cedula, id_clase) 
 )
-
+GO
 
 -- Tabla Grupo
 CREATE TABLE grupo (
@@ -271,6 +272,7 @@ CREATE TABLE grupo (
 	cantidad_matriculados TINYINT NOT NULL,
 	CONSTRAINT PK_grupo PRIMARY KEY (numero_grupo)
 );
+GO
 
 -- Tabla horario
 CREATE TABLE horario (
@@ -280,7 +282,7 @@ CREATE TABLE horario (
 	hora_fin TIME NOT NULL,
 	CONSTRAINT PK_horario PRIMARY KEY (id_horario)
 );
-
+GO
 
 -- Tabla asistencia
 CREATE TABLE asistencia (
@@ -288,6 +290,7 @@ CREATE TABLE asistencia (
 	fecha DATE NOT NULL,
 	CONSTRAINT PK_asistencia PRIMARY KEY (id_asistencia)
 );
+GO
 
 -- Tabla intermedia sesion
 CREATE TABLE sesion (
@@ -297,6 +300,7 @@ CREATE TABLE sesion (
 	id_clase INT NOT NULL,
 	CONSTRAINT PK_sesion PRIMARY KEY (numero_grupo, id_horario, id_asistencia, id_clase)
 )
+GO
 
 
 
@@ -309,24 +313,27 @@ CREATE TABLE sesion (
 ALTER TABLE distritos
 ADD CONSTRAINT FK_canton_distritos FOREIGN KEY(canton) REFERENCES cantones(id_canton)
 ON UPDATE CASCADE;
+GO
 
 -- FK: cantones → provincias
 ALTER TABLE cantones
 ADD CONSTRAINT FK_provincia_provincias FOREIGN KEY(provincia) REFERENCES provincias(id_provincia)
 ON UPDATE CASCADE;
+GO
 
 -- FK: persona → distritos
 ALTER TABLE persona
 ADD CONSTRAINT FK_distrito_persona FOREIGN KEY(distrito)
 REFERENCES distritos(id_distrito)
 ON UPDATE CASCADE;
+GO
 
 -- FK: persona → generos
 ALTER TABLE persona
 ADD CONSTRAINT FK_genero_persona FOREIGN KEY(genero)
 REFERENCES generos(id_genero)
 ON UPDATE CASCADE;
-
+GO
 
 
 --Llaves foraneas que tienen que ver con cliente
@@ -335,6 +342,7 @@ ALTER TABLE cliente
 ADD CONSTRAINT FK_estado_clientes_cliente FOREIGN KEY(estado)
 REFERENCES estados_clientes(id_estado)
 ON UPDATE CASCADE
+GO
 
 -- FK: cliente_membresias->cliente
 ALTER TABLE cliente_membresias
@@ -342,6 +350,7 @@ ADD CONSTRAINT FK_cliente_membresias_cliente FOREIGN KEY(cedula)
 REFERENCES cliente(cedula)
 ON DELETE CASCADE
 ON UPDATE CASCADE;
+GO
 
 -- FK: cliente_membresias->membresias
 ALTER TABLE cliente_membresias
@@ -349,12 +358,14 @@ ADD CONSTRAINT FK_cliente_membresias_membresia FOREIGN KEY(id_membresia)
 REFERENCES membresia(id_membresia)
 ON DELETE CASCADE
 ON UPDATE CASCADE;
+GO
 
 
 --FK: membresia->tipo_membresia
 ALTER TABLE membresia
 ADD CONSTRAINT FK_tipo_membresia FOREIGN KEY(tipo)
 REFERENCES tipo_membresia(id_tipo_membresia)
+GO
 
 --FK: cliente_clase ->cliente
 ALTER TABLE cliente_clase
@@ -362,6 +373,7 @@ ADD CONSTRAINT FK_cliente_clase_cliente FOREIGN KEY(cedula)
 REFERENCES cliente(cedula)
 ON DELETE CASCADE
 ON UPDATE CASCADE;
+GO
 
 -- FK: cliente_clase ->clase
 ALTER TABLE cliente_clase
@@ -369,6 +381,7 @@ ADD CONSTRAINT FK_cliente_clase_clase FOREIGN KEY(id_clase)
 REFERENCES clase(id_clase)
 ON DELETE CASCADE
 ON UPDATE CASCADE;
+GO
 
 
 
@@ -380,6 +393,7 @@ ADD CONSTRAINT FK_admin_maquina_administrador FOREIGN KEY (cedula)
 REFERENCES administrador(cedula)
 ON DELETE CASCADE
 ON UPDATE CASCADE;
+GO
 
 -- FK: admin_maquina → maquina
 ALTER TABLE admin_maquina
@@ -387,11 +401,13 @@ ADD CONSTRAINT FK_admin_maquina_maquina FOREIGN KEY (id_maquina)
 REFERENCES maquina(id_maquina)
 ON DELETE CASCADE
 ON UPDATE CASCADE;
+GO
 
 -- FK: maquina → estados_maquinas
 ALTER TABLE maquina
 ADD CONSTRAINT FK_estado_estados FOREIGN KEY(estado)
 REFERENCES estados_maquinas(id_estado);
+GO
 
 
 
@@ -405,6 +421,7 @@ ADD CONSTRAINT FK_entrenador_clase_entrenador FOREIGN KEY(cedula)
 REFERENCES entrenador(cedula)
 ON DELETE CASCADE
 ON UPDATE CASCADE;
+GO
 
 
 --FK: entrenador_clase -> clase
@@ -413,6 +430,7 @@ ADD CONSTRAINT FK_entrenador_clase_clase FOREIGN KEY(id_clase)
 REFERENCES clase(id_clase)
 ON DELETE CASCADE
 ON UPDATE CASCADE;
+GO
 
 
 
@@ -423,6 +441,7 @@ ADD CONSTRAINT FK_sesion_grupo FOREIGN KEY (numero_grupo)
 REFERENCES grupo(numero_grupo)
 ON DELETE CASCADE
 ON UPDATE CASCADE
+GO
 
 
 
@@ -432,6 +451,7 @@ ADD CONSTRAINT FK_sesion_horario FOREIGN KEY (id_horario)
 REFERENCES horario(id_horario)
 ON DELETE CASCADE
 ON UPDATE CASCADE
+GO
 
 --FK: sesion->asistencia
 ALTER TABLE sesion
@@ -439,6 +459,7 @@ ADD CONSTRAINT FK_sesion_asistencia FOREIGN KEY (id_asistencia)
 REFERENCES asistencia(id_asistencia)
 ON DELETE CASCADE
 ON UPDATE CASCADE
+GO
 
 
 --FK: sesion->clase
@@ -447,13 +468,11 @@ ADD CONSTRAINT FK_sesion_clase FOREIGN KEY (id_clase)
 REFERENCES clase(id_clase)
 ON DELETE CASCADE
 ON UPDATE CASCADE
+GO
 
 
 
 --Checks para validaciones de datos
-ALTER TABLE persona
-ADD CONSTRAINT CK_edad CHECK (edad BETWEEN 0 AND 120);
-
 ALTER TABLE grupo
 ADD CONSTRAINT CK_grupo_cupos CHECK (cantidad_matriculados <= cupo_disponible);
 
@@ -751,19 +770,20 @@ BEGIN
 		RAISERROR(@mensaje_error, 16, 1);
 	END CATCH
 END;
+GO
 
+/*
+EXEC insertar_cliente
+    @cedula = 880123236,
+    @nombre = 'Juan',
+    @apellido1 = 'Pérez',
+	@apellido2 = 'Gómez',
+    @genero = 1,
+	@distrito = 1,  
+    @correo = 'juan@example.com',
+	@fecha_nacimiento = '1990-05-19',
+    @edad = 35;
 
---EXEC insertar_cliente
---    @cedula = 880123236,
---    @nombre = 'Juan',
---    @apellido1 = 'Pérez',
---   @apellido2 = 'Gómez',
---    @genero = 1,
---   @distrito = 1,  
---    @correo = 'juan@example.com',
---   @fecha_nacimiento = '1990-05-19',
---    @edad = 35;
-
---EXEC eliminar_persona '100123456'
---SELECT * FROM persona WHERE cedula = '100123456'
-
+EXEC eliminar_persona '880123236'
+SELECT * FROM persona WHERE cedula = '880123236'
+/*
