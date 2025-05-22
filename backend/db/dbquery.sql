@@ -130,19 +130,18 @@ CREATE TABLE persona(
 
 -- Tabla telefonos_personas
 CREATE TABLE telefonos_personas (
-	cedula_persona CedulaRestringida	NOT NULL,
-	telefono TelefonoRestringido		NOT NULL,
-	PRIMARY KEY (cedula_persona, telefono),
-	CONSTRAINT FK_cedula_persona_tel FOREIGN KEY (cedula_persona) REFERENCES persona(cedula)
-	ON DELETE CASCADE
-	ON UPDATE CASCADE
+    cedula_persona CedulaRestringida PRIMARY KEY,  
+    telefono TelefonoRestringido NOT NULL,
+    CONSTRAINT FK_cedula_persona_tel FOREIGN KEY (cedula_persona) REFERENCES persona(cedula)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 -- Tabla entrenador
 CREATE TABLE entrenador(
 	cedula  CedulaRestringida			NOT NULL,
 	fecha_contratacion DATE				NOT NULL DEFAULT GETDATE(),
-	tipo VARCHAR(20)					NOT NULL,
+	tipo VARCHAR(20)					NOT NULL DEFAULT 'General',
 	CONSTRAINT PK_cedula_entrenador PRIMARY KEY(cedula),
 	CONSTRAINT FK_entrenador_persona FOREIGN KEY(cedula) REFERENCES persona(cedula)
 	ON DELETE CASCADE
@@ -162,9 +161,9 @@ CREATE TABLE administrador(
 
 --Tabla clientes
 CREATE TABLE cliente(
-	cedula			 CedulaRestringida		NOT NULL,
-	estado			TINYINT					NOT NULL,
-	fecha_registro	DATE					NOT NULL DEFAULT GETDATE(),
+	cedula CedulaRestringida	NOT NULL,
+	estado TINYINT				NOT NULL DEFAULT 1	,		
+	fecha_registro	DATE		NOT NULL DEFAULT GETDATE(),
 
 	CONSTRAINT PK_cedula_cliente PRIMARY KEY(cedula),
 	CONSTRAINT FK_cliente_persona FOREIGN KEY(cedula) REFERENCES persona(cedula)
@@ -184,8 +183,7 @@ CREATE TABLE estados_clientes(
 CREATE TABLE cliente_membresias(
 	cedula			 CedulaRestringida	NOT NULL,
 	id_membresia	INT					NOT NULL,
-
-	CONSTRAINT PK_cliente_membresias PRIMARY KEY(cedula, id_membresia)
+	CONSTRAINT PK_cliente_membresias PRIMARY KEY(cedula)
 )
 
 
@@ -250,7 +248,7 @@ CREATE TABLE admin_maquina(
 CREATE TABLE clase(
 	id_clase	INT				NOT NULL,
 	nombre		VARCHAR(50)		NOT NULL,
-	descripcion	VARCHAR(200)	NOT NULL
+	descripcion VARCHAR(200) NOT NULL DEFAULT 'Sin descripción'
 
 	CONSTRAINT PK_clase_id_clase PRIMARY KEY(id_clase)
 )
@@ -267,9 +265,9 @@ GO
 
 -- Tabla Grupo
 CREATE TABLE grupo (
-	numero_grupo TINYINT NOT NULL,
-	cupo_disponible TINYINT NOT NULL,
-	cantidad_matriculados TINYINT NOT NULL,
+	numero_grupo		  TINYINT NOT NULL,
+	cupo_disponible		  TINYINT NOT NULL,
+	cantidad_matriculados TINYINT NOT NULL DEFAULT 0,
 	CONSTRAINT PK_grupo PRIMARY KEY (numero_grupo)
 );
 GO
@@ -634,6 +632,7 @@ INSERT INTO asistencia (id_asistencia, fecha) VALUES
 (4,'2024-05-04'),(5,'2024-05-05'),(6,'2024-05-06'),
 (7,'2024-05-07'),(8,'2024-05-08'),(9,'2024-05-09'),(10,'2024-05-10');
 
+
 -- Tabla sesion
 INSERT INTO sesion (numero_grupo, id_horario, id_asistencia, id_clase) VALUES
 (1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5),
@@ -667,28 +666,47 @@ GO
 
 
 --Vista de general de todos los clientes
-CREATE VIEW vista_clientes
-AS
+CREATE VIEW vista_clientes AS
 SELECT
-	p.nombre,
-	p.apellido1,
-	p.apellido2,
-    c.cedula,
-    c.fecha_registro,
-    m.fecha_expiracion,
-    tm.tipo AS tipo_membresia,
-    ec.estado AS estado_cliente
-FROM 
-    cliente c
-	JOIN persona p ON c.cedula = p.cedula
-    JOIN cliente_membresias cm ON c.cedula = cm.cedula
-    JOIN membresia m ON cm.id_membresia = m.id_membresia
-    JOIN tipo_membresia tm ON m.tipo = tm.id_tipo_membresia
-    JOIN estados_clientes ec ON c.estado = ec.id_estado
-	GO
+	dc.nombre,
+	dc.apellido1,
+	dc.apellido2,
+	dc.cedula,
+	dc.telefono,
+	dc.fecha_registro,
+	dm.fecha_expiracion,
+	dm.tipo_membresia,
+	dc.estado_cliente
+FROM
+	-- Subconsulta dc (datos cliente): datos del cliente + persona + teléfono + estado
+	(
+		SELECT
+			p.nombre,
+			p.apellido1,
+			p.apellido2,
+			c.cedula,
+			tp.telefono,
+			c.fecha_registro,
+			ec.estado AS estado_cliente
+		FROM cliente c
+		JOIN persona p ON c.cedula = p.cedula
+		JOIN telefonos_personas tp ON c.cedula = tp.cedula_persona
+		JOIN estados_clientes ec ON c.estado = ec.id_estado
+	) AS dc
 
-SELECT * FROM vista_clientes
+	-- Subconsulta dm (datos membresia): membresia y tipo
+	LEFT JOIN (
+		SELECT
+			cm.cedula,
+			me.fecha_expiracion,
+			tm.tipo AS tipo_membresia
+		FROM cliente_membresias cm
+		JOIN membresia me ON cm.id_membresia = me.id_membresia
+		JOIN tipo_membresia tm ON me.tipo = tm.id_tipo_membresia
+	) AS dm
+	ON dc.cedula = dm.cedula;
 GO
+
 
 
 --Vista de clientes con clase actual asignada
@@ -706,6 +724,53 @@ FROM
 	JOIN persona p ON c.cedula = p.cedula
 	JOIN cliente_clase cc ON c.cedula = cc.cedula
 	JOIN clase cl ON cc.id_clase = cl.id_clase
+GO
+
+SELECT * FROM vista_clientes_clase
+GO
+
+
+
+--Vista de sesion para ver el grupo,horario y la clase que el cliente debe asistir por medio de la tabla asistencia
+CREATE VIEW vista_clientes_sesion AS
+SELECT
+    dc.cedula,
+    dc.nombre_cliente,
+    ds.nombre_clase,
+    ds.descripcion_clase,
+    ds.numero_grupo,
+    ds.fecha_sesion,
+    ds.dia,
+    ds.hora_inicio,
+    ds.hora_fin
+FROM 
+    -- Subconsulta de datos del cliente con clase
+    (
+        SELECT 
+            p.cedula,
+            p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_cliente,
+            cc.id_clase
+        FROM cliente_clase cc
+        JOIN persona p ON p.cedula = cc.cedula
+    ) AS dc
+
+    -- Subconsulta de datos de la sesion
+    JOIN (
+        SELECT 
+            s.id_clase,
+            c.nombre AS nombre_clase,
+            c.descripcion AS descripcion_clase,
+            s.numero_grupo,
+            a.fecha AS fecha_sesion,
+            h.dia,
+            h.hora_inicio,
+            h.hora_fin
+        FROM sesion s
+        JOIN clase c ON s.id_clase = c.id_clase
+        JOIN asistencia a ON s.id_asistencia = a.id_asistencia
+        JOIN horario h ON s.id_horario = h.id_horario
+    ) AS ds
+    ON dc.id_clase = ds.id_clase;
 GO
 
 
@@ -726,21 +791,48 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        IF EXISTS (SELECT 1 FROM persona WHERE cedula = @cedula)
+        -- Validar que la persona no exista ya
+        IF EXISTS (
+            SELECT 1 FROM persona WHERE cedula = @cedula
+        )
         BEGIN
-            RAISERROR('El cliente ya existe', 16, 1);
+            RAISERROR('El cliente ya existe en la base de datos.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END
 
-        IF NOT EXISTS (SELECT * FROM distritos WHERE id_distrito = @distrito)
+        -- Validar que el correo no este registrado por otra persona
+        IF EXISTS (
+            SELECT 1 FROM persona WHERE correo = @correo
+        )
         BEGIN
-            RAISERROR('El distrito no existe', 16, 1);
+            RAISERROR('El correo ya está registrado por otra persona.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Validar que el distrito exista
+        IF NOT EXISTS (
+            SELECT 1 FROM distritos WHERE id_distrito = @distrito
+        )
+        BEGIN
+            RAISERROR('El distrito indicado no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Validar que el genero exista
+        IF NOT EXISTS (
+            SELECT 1 FROM generos WHERE id_genero = @genero
+        )
+        BEGIN
+            RAISERROR('El género indicado no existe.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END
 
 
+        -- Insertar en persona
         INSERT INTO persona (
             cedula, nombre, apellido1, apellido2,
             genero, distrito, correo,
@@ -752,7 +844,7 @@ BEGIN
             @fecha_nacimiento, @edad
         );
 
-
+        -- Insertar en cliente con estado activo (1)
         INSERT INTO cliente (cedula, estado)
         VALUES (@cedula, 1);
 
@@ -768,6 +860,76 @@ BEGIN
     END CATCH
 END;
 GO
+
+
+
+/*
+Procedimiento almacenado transaccional para actualizar la informacion de una persona, en este caso
+el correo y su telefono
+*/
+CREATE PROCEDURE actualizar_persona(
+    @cedula CedulaRestringida,
+    @correo CorreoRestringido,
+    @telefono TelefonoRestringido
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Verificar existencia de la persona
+        IF NOT EXISTS (
+            SELECT 1 FROM persona WHERE cedula = @cedula
+        )
+        BEGIN
+            RAISERROR('La persona no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Verificar correo no duplicado
+        IF EXISTS (
+            SELECT 1 FROM persona WHERE correo = @correo AND cedula <> @cedula
+        )
+        BEGIN
+            RAISERROR('El correo ya está registrado por otra persona.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Actualizar correo
+        UPDATE persona
+        SET correo = @correo
+        WHERE cedula = @cedula;
+
+        -- Actualizar telefono y si no existe, crearlo
+        IF EXISTS (
+            SELECT 1 FROM telefonos_personas WHERE cedula_persona = @cedula
+        )
+        BEGIN
+            UPDATE telefonos_personas
+            SET telefono = @telefono
+            WHERE cedula_persona = @cedula;
+        END
+        ELSE
+        BEGIN
+            INSERT INTO telefonos_personas (cedula_persona, telefono)
+            VALUES (@cedula, @telefono);
+        END
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+
+        DECLARE @msg NVARCHAR(4000) = ERROR_MESSAGE();
+
+        IF XACT_STATE() != 0 ROLLBACK TRANSACTION;
+        RAISERROR(@msg, 16, 1);
+
+    END CATCH
+END;
+GO
+
 
 
 --Procedimiento almacenado transaccional para eliminar una persona, como ya la tabla persona tiene
@@ -820,4 +982,18 @@ EXEC insertar_cliente
 
 EXEC eliminar_persona '880123236'
 SELECT * FROM persona WHERE cedula = '880123236'
+*/
+
+
+/*
+SELECT
+	p.cedula,
+	p.correo,
+	t.telefono
+FROM persona p
+JOIN telefonos_personas t ON p.cedula = t.cedula_persona
+WHERE p.cedula = '902345678'
+
+EXEC actualizar_persona '902345678','jony@gmail.com', '54567895'
+
 */

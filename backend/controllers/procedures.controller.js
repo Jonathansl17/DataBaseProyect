@@ -59,6 +59,51 @@ export const insertar_cliente = async (req, res) => {
 };
 
 
+export const actualizar_persona = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active SQL Server connection",
+        });
+    }
+
+    const {
+        cedula,
+        correo,
+        telefono
+    } = req.body;
+
+    if (!cedula || !correo || !telefono) {
+        return res.status(400).json({
+            success: false,
+            message: "Todos los campos son obligatorios"
+        });
+    }
+
+    try {
+        const result = await connection
+            .request()
+            .input("cedula", sql.Char(9), cedula)
+            .input("correo", sql.VarChar(50), correo)
+            .input("telefono", sql.VarChar(8), telefono)
+            .execute("actualizar_persona");
+
+        res.status(200).json({
+            success: true,
+            message: "Cliente actualizado correctamente"
+        });
+    } catch (err) {
+        console.error("Error executing actualizar_persona procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
+
+
 export const eliminar_persona = async(req,res)=>{
     const { connection } = getConnection();
 
