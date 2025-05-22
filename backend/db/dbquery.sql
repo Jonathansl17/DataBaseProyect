@@ -478,6 +478,22 @@ ADD CONSTRAINT CK_grupo_cupos CHECK (cantidad_matriculados <= cupo_disponible);
 
 
 
+/*Creamos un indice NONCLUSTERED en la columna nombre, apellido1 y apellido2, ya que estas columnas
+  son frecuentemente accedidas en muchos lados de la aplicacion
+
+ Ya que solo se puede crear 1 CLUSTERED INDEX por tabla y en el caso de la tabla persona,
+ ya existe la llave primaria cedula que automaticamente crea un CLUSTERED INDEX
+ 
+ Por buenas practicas y para que el comportamiento de la tabla no dependa del estado
+ previo de la tabla, se especifica que es NONCLUSTERED INDEX
+*/
+CREATE NONCLUSTERED INDEX idx_persona_nombre ON persona(nombre);
+CREATE NONCLUSTERED INDEX idx_persona_apellido1 ON persona(apellido1);
+CREATE NONCLUSTERED INDEX idx_persona_apellido2 ON persona(apellido2);
+
+
+
+
 --Inserciones de prueba a todas las tablas
 -- Tabla provincias
 INSERT INTO provincias (id_provincia, nombre_provincia) VALUES
@@ -676,7 +692,7 @@ GO
 
 
 --Vista de clientes con clase actual asignada
-CREATE VIEW vista_clientes_clase_actual
+CREATE VIEW vista_clientes_clase
 AS
 SELECT
 	p.nombre AS nombre_cliente,
