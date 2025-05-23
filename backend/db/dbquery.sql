@@ -981,7 +981,8 @@ FROM
 	ON dc.cedula = dm.cedula;
 GO
 
-
+SELECT * FROM vista_clientes
+GO
 
 --Vista de clientes con clase actual asignada
 CREATE VIEW vista_clientes_clase
@@ -1441,6 +1442,33 @@ END;
 GO
 
 
+--Procedimiento almacenado transaccional para obtener estadisticas del gym
+CREATE OR ALTER PROCEDURE obtener_estadisticas_acumuladas_por_fecha
+    @fecha DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Validación: la fecha no puede ser mayor a hoy
+    IF @fecha > CAST(GETDATE() AS DATE)
+    BEGIN
+        RAISERROR('La fecha no puede ser mayor a la fecha actual.', 16, 1)
+        RETURN;
+    END
+
+    SELECT
+        (SELECT COUNT(*) FROM cliente WHERE CAST(fecha_registro AS DATE) <= @fecha) AS total_clientes,
+        (SELECT COUNT(*) FROM entrenador WHERE CAST(fecha_contratacion AS DATE) <= @fecha) AS total_entrenadores,
+        (SELECT COUNT(*) FROM clase) AS total_clases,
+        (SELECT COUNT(*) FROM sesion_programada WHERE CAST(fecha AS DATE) <= @fecha) AS total_sesiones,
+        (SELECT ISNULL(SUM(monto), 0) FROM pagos WHERE CAST(fecha_pago AS DATE) <= @fecha) AS total_pagos,
+        (SELECT COUNT(*) FROM maquina) AS total_maquinas 
+END;
+GO
+
+EXEC obtener_estadisticas_acumuladas_por_fecha '2025-05-23';
+
+GO
 
 
 
