@@ -1291,7 +1291,7 @@ GO
 
 
 --Procedimiento almacenado transaccional para registrar la asistencia de una clase programada
-CREATE PROCEDURE registrar_asistencia_cliente (
+CREATE OR ALTER PROCEDURE registrar_asistencia_cliente (
     @cedula CedulaRestringida,
     @id_sesion_programada INT
 )
@@ -1301,23 +1301,48 @@ BEGIN
         BEGIN TRANSACTION;
 
         -- Validar existencia del cliente
-        IF NOT EXISTS (SELECT 1 FROM cliente WHERE cedula = @cedula)
+        IF NOT EXISTS (
+            SELECT 1 FROM cliente WHERE cedula = @cedula
+        )
         BEGIN
             RAISERROR('Cliente no existe.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END
 
-        -- Validar existencia de sesion programada
-        IF NOT EXISTS (SELECT 1 FROM sesion_programada WHERE id_sesion_programada = @id_sesion_programada)
+        -- Validar existencia de la sesión programada
+        IF NOT EXISTS (
+            SELECT 1 FROM sesion_programada WHERE id_sesion_programada = @id_sesion_programada
+        )
         BEGIN
             RAISERROR('Sesión programada no existe.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END
 
+        -- Obtener el ID de la clase asociada a la sesion programada
+        DECLARE @id_clase INT;
+        SELECT @id_clase = s.id_clase
+        FROM sesion_programada sp
+        JOIN sesion s ON sp.id_sesion = s.id_sesion
+        WHERE sp.id_sesion_programada = @id_sesion_programada;
+
+        -- Validar que el cliente este inscrito en esa clase
+        IF NOT EXISTS (
+            SELECT 1 FROM cliente_clase
+            WHERE cedula = @cedula AND id_clase = @id_clase
+        )
+        BEGIN
+            RAISERROR('El cliente no está inscrito en la clase de esta sesión.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
         -- Verificar si ya existe una asistencia registrada
-        IF EXISTS (SELECT 1 FROM asistencia_cliente WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada)
+        IF EXISTS (
+            SELECT 1 FROM asistencia_cliente
+            WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada
+        )
         BEGIN
             RAISERROR('Asistencia ya registrada.', 16, 1);
             ROLLBACK TRANSACTION;
@@ -1332,11 +1357,13 @@ BEGIN
     END TRY
     BEGIN CATCH
         DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
-        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        IF XACT_STATE() != 0 
+		ROLLBACK TRANSACTION;
         RAISERROR(@err, 16, 1);
     END CATCH
 END;
 GO
+
 
 
 GO
@@ -1414,16 +1441,7 @@ END;
 GO
 
 
-EXEC registrar_pago_membresia 
-    @cedula_cliente = '934827096',
-    @tipo_membresia = 1,          
-    @monto = 15000.00,
-    @fecha_pago = '2025-06-01',
-    @id_forma_pago = 1;
 
-SELECT * FROM pagos WHERE cedula_cliente = '934827096'
-SELECT * FROM cliente_membresias WHERE cedula = '934827096'
-DELETE FROM cliente_membresias WHERE cedula = '934827096'
 
 
 

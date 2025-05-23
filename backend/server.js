@@ -6,6 +6,7 @@ import dbRoutes from './routes/db.routes.js'
 import clienteRoutes from './routes/cliente.routes.js'
 import membresiaRoutes from './routes/membresia.routes.js'
 import sesionRoutes from './routes/sesion.routes.js'
+import claseRoutes from './routes/clase.routes.js'
 
 const app = express();
 const port = 3100;
@@ -18,6 +19,7 @@ app.use('/connection', dbRoutes)
 app.use('/clientes', clienteRoutes)
 app.use('/membresias', membresiaRoutes)
 app.use('/sesiones', sesionRoutes)
+app.use('/clases', claseRoutes)
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
