@@ -1,36 +1,143 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FastFitness Admin - Sistema de Administración
 
-## Getting Started
+Este es un frontend completo en Next.js con Tailwind CSS para administrar el gimnasio FastFitness.
 
-First, run the development server:
+## Estructura del Proyecto
 
-```bash
+### Páginas Principales
+- **Dashboard** (`/`) - Vista general con estadísticas y acciones rápidas
+- **Clientes** (`/clientes`) - Gestión completa de clientes
+- **Entrenadores** (`/entrenadores`) - Administración de entrenadores
+- **Administradores** (`/administradores`) - Gestión de administradores
+- **Clases** (`/clases`) - Manejo de clases disponibles
+- **Sesiones** (`/sesiones`) - Programación de sesiones
+- **Asistencia** (`/asistencia`) - Control de asistencia a clases
+- **Membresías** (`/membresias`) - Gestión de membresías
+- **Pagos** (`/pagos`) - Procesamiento de pagos
+- **Máquinas** (`/maquinas`) - Administración de equipos
+- **Ubicaciones** (`/ubicaciones`) - Gestión de provincias, cantones, distritos
+- **Reportes** (`/reportes`) - Consultas avanzadas y análisis
+
+### Endpoints de API
+
+Todos los endpoints están definidos en `app/api/endpoints.ts`. Debes reemplazar `YOUR_API_BASE_URL` con la URL de tu backend.
+
+#### Procedimientos Almacenados Implementados:
+- `insertar_cliente` - Crear nuevo cliente
+- `actualizar_persona` - Actualizar información de persona
+- `eliminar_persona` - Eliminar persona del sistema
+- `asignar_clase_a_cliente` - Inscribir cliente en clase
+- `registrar_asistencia_cliente` - Marcar asistencia
+- `registrar_pago_membresia` - Procesar pago de membresía
+- `renovar_membresia` - Renovar membresía existente
+
+#### Vistas Utilizadas:
+- `vista_clientes` - Información completa de clientes
+- `vista_clientes_clase` - Clientes con clases asignadas
+- `vista_clientes_sesion` - Información de sesiones por cliente
+
+#### Consultas Avanzadas:
+1. Ranking de clientes por número de clases inscritas
+2. Clientes con membresías vencidas
+3. Estado de grupos (capacidad vs matriculados)
+4. Distribución de género por estado de clientes
+5. Cantidad de sesiones por fecha
+
+## Configuración
+
+### 1. Instalar Dependencias
+\`\`\`bash
+npm install
+\`\`\`
+
+### 2. Configurar API
+Edita el archivo `app/api/endpoints.ts` y reemplaza `YOUR_API_BASE_URL` con la URL de tu backend:
+
+\`\`\`typescript
+const API_BASE_URL = 'http://localhost:3001/api' // Tu URL aquí
+\`\`\`
+
+### 3. Ejecutar en Desarrollo
+\`\`\`bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+\`\`\`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Funcionalidades Implementadas
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### ✅ Gestión de Clientes
+- Lista completa con filtros y búsqueda
+- Formulario de registro con validaciones
+- Edición y eliminación
+- Asignación a clases
+- Vista de membresías activas
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### ✅ Control de Asistencia
+- Selección de sesión programada
+- Lista de clientes inscritos
+- Registro de asistencia (asistió/no asistió)
+- Validaciones de inscripción
 
-## Learn More
+### ✅ Procesamiento de Pagos
+- Búsqueda de cliente por cédula
+- Selección de tipo de membresía
+- Cálculo automático de montos
+- Múltiples formas de pago
+- Historial completo de pagos
 
-To learn more about Next.js, take a look at the following resources:
+### ✅ Reportes y Análisis
+- Dashboard con estadísticas generales
+- Consultas avanzadas predefinidas
+- Visualización de datos en tablas
+- Filtros y búsquedas
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### ✅ Navegación y UX
+- Sidebar con navegación completa
+- Header con búsqueda global
+- Diseño responsivo
+- Componentes reutilizables
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Próximos Pasos
 
-## Deploy on Vercel
+1. **Conectar con tu Backend**: Reemplaza las URLs en `endpoints.ts`
+2. **Implementar Autenticación**: Agregar login y manejo de sesiones
+3. **Validaciones**: Implementar validaciones del lado cliente
+4. **Estados de Carga**: Agregar spinners y estados de carga
+5. **Manejo de Errores**: Implementar manejo robusto de errores
+6. **Notificaciones**: Agregar toasts para feedback al usuario
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tecnologías Utilizadas
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Next.js 14** - Framework de React
+- **Tailwind CSS** - Estilos utilitarios
+- **shadcn/ui** - Componentes de UI
+- **Lucide React** - Iconos
+- **TypeScript** - Tipado estático
+
+## Estructura de Archivos
+
+\`\`\`
+app/
+├── page.tsx                 # Dashboard principal
+├── layout.tsx              # Layout principal
+├── globals.css             # Estilos globales
+├── api/
+│   └── endpoints.ts        # Configuración de endpoints
+├── clientes/
+│   ├── page.tsx           # Lista de clientes
+│   └── nuevo/
+│       └── page.tsx       # Formulario nuevo cliente
+├── asistencia/
+│   └── page.tsx           # Control de asistencia
+├── pagos/
+│   ├── page.tsx           # Lista de pagos
+│   └── nuevo/
+│       └── page.tsx       # Formulario nuevo pago
+└── reportes/
+    └── page.tsx           # Lista de reportes
+
+components/
+├── sidebar.tsx            # Navegación lateral
+└── header.tsx            # Header con búsqueda
+\`\`\`
+
+Este sistema está listo para conectarse con tu backend de SQL Server y utilizar todos los procedimientos almacenados, vistas y consultas que has creado.
