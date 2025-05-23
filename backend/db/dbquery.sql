@@ -580,8 +580,8 @@ INSERT INTO estados_clientes (id_estado, estado) VALUES
 
 -- Tabla cliente
 INSERT INTO cliente (cedula, estado, fecha_registro) VALUES
-(612345678,1,'2025-01-01'),(701234567,2,'2022-02-01'),
-(812345679,3,'2025-01-01'),(902345678,4,'2024-01-01'),
+(612345678,1,'2025-01-01'),(701234567,2,'2025-02-01'),
+(812345679,3,'2025-01-01'),(902345678,4,'2025-01-01'),
 (100123456,5,'2025-02-01');
 
 -- Tabla tipo_membresia
@@ -790,8 +790,6 @@ FROM
         FROM cliente_clase cc
         JOIN persona p ON p.cedula = cc.cedula
     ) AS dc 
-
-	
 JOIN (
     SELECT 
         s.id_clase,
@@ -1006,35 +1004,66 @@ BEGIN
 END;
 GO
 
-/*
-EXEC insertar_cliente
-    @cedula = 880123236,
-    @nombre = 'Juan',
-    @apellido1 = 'Pérez',
-	@apellido2 = 'Gómez',
-    @genero = 1,
-	@distrito = 1,  
-    @correo = 'juan@example.com',
-	@fecha_nacimiento = '1990-05-19',
-    @edad = 35;
 
-EXEC eliminar_persona '880123236'
-SELECT * FROM persona WHERE cedula = '880123236'
-*/
+--Procedimiento almacenado para renovar la membresia de un cliente
+CREATE PROCEDURE renovar_membresia(
+	@cedula CedulaRestringida,
+	@nueva_fecha DATE
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+	BEGIN TRY
+		BEGIN TRANSACTION
 
 
-/*
-SELECT
-	p.cedula,
-	p.correo,
-	t.telefono
-FROM persona p
-JOIN telefonos_personas t ON p.cedula = t.cedula_persona
-WHERE p.cedula = '902345678'
+		IF NOT EXISTS(
+			SELECT 1
+			FROM cliente
+			WHERE cedula = @cedula
+		)
+		BEGIN
+			RAISERROR('La persona no existe en la base de datos',16,1)
+			ROLLBACK TRANSACTION;
+			RETURN;
+		END
 
-EXEC actualizar_persona '902345678','jony@gmail.com', '54567895'
+		--Verificar que el cliente tenga una membresia activa
+		IF NOT EXISTS(
+			SELECT 1
+			FROM cliente_membresias
+			WHERE cedula = @cedula
+		)
+		BEGIN
+			RAISERROR('La persona no tiene una membresia activa',16,1)
+			ROLLBACK TRANSACTION;
+			RETURN;
+		END
 
-*/
+
+		--Actualizar la nueva fecha de expiracion del cliente
+		UPDATE membresia
+		SET fecha_expiracion = @nueva_fecha
+		WHERE id_membresia =(
+			SELECT id_membresia
+			FROM cliente_membresias
+			WHERE cedula = @cedula
+		)
+		COMMIT TRANSACTION
+	END TRY
+	BEGIN CATCH
+
+        DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
+
+        IF XACT_STATE() != 0 
+		BEGIN
+		ROLLBACK TRANSACTION;
+		END
+
+        RAISERROR(@error, 16, 1);
+    END CATCH
+END
+
 
 
 --Consulta avanzada 1: Ranking de clientes por numero de clases inscritas de manera descendente
@@ -1058,6 +1087,8 @@ FROM cliente_membresias cm
 JOIN membresia m ON cm.id_membresia = m.id_membresia
 JOIN persona p ON cm.cedula = p.cedula
 WHERE m.fecha_expiracion < GETDATE();
+
+
 
 
 --Consulta avanzada 3: Promedio de matriculados por grupo y detección de sobrecupo

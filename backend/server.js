@@ -3,9 +3,8 @@ import cors from 'cors';
 
 import basicRoutes from './routes/basic.routes.js'
 import dbRoutes from './routes/db.routes.js'
-import viewRoutes from './routes/views.routes.js'
-import proceduresRoutes from './routes/procedures.routes.js'
-import advancedQuerysRoutes from './routes/advancedQueries.routes.js'
+import personaRoutes from './routes/personas.routes.js'
+import membresiaRoutes from './routes/membresias.routes.js'
 
 const app = express();
 const port = 3100;
@@ -15,9 +14,8 @@ app.use(express.json());
 
 app.use('/hello', basicRoutes);
 app.use('/connection', dbRoutes)
-app.use('/views', viewRoutes)
-app.use('/procedures', proceduresRoutes)
-app.use('/advancedqueries', advancedQuerysRoutes)
+app.use('/personas', personaRoutes)
+app.use('/membresias', membresiaRoutes)
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
