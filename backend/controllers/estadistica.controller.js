@@ -11,7 +11,7 @@ export const obtenerEstadisticasPorFecha = async (req, res) => {
         });
     }
 
-    const { fecha} = req.body;
+    const { fecha} = req.query;
 
     if (!fecha) {
         return res.status(400).json({
@@ -24,14 +24,14 @@ export const obtenerEstadisticasPorFecha = async (req, res) => {
         const result = await connection
             .request()
             .input("fecha", sql.Date, fecha)
-            .execute("obtener_estadisticas_por_fecha");
+            .execute("obtener_estadisticas_acumuladas_por_fecha");
 
         res.status(200).json({
             success: true,
             data: result.recordset
         });
     } catch (err) {
-        console.error("Error executing obtener_estadisticas_por_fecha procedure: ", err);
+        console.error("Error executing obtener_estadisticas_acumuladas_por_fecha procedure: ", err);
         res.status(400).json({
             success: false,
             message: err.message

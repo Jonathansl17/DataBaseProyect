@@ -1,30 +1,38 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import { Plus, Search, Filter, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search, Filter, Edit, Trash2 } from "lucide-react"
-import Link from "next/link"
+import { Cliente } from "@/types/clientes"
 
 export default function ClientesPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [clientes, setClientes] = useState<Cliente[]>([])
 
-  // Aquí conectarías con tu API: GET /api/clientes o vista_clientes
-  const clientes = [
-    {
-      cedula: "414086906",
-      nombre: "Mónica Soto Campos",
-      telefono: "69138025",
-      fecha_registro: "2025-01-01",
-      fecha_expiracion: "2025-02-01",
-      tipo_membresia: "Mensual",
-      estado_cliente: "Inactivo",
-    },
-    // Más datos...
-  ]
+  useEffect(() => {
+    const fetchClientes = async () => {
+      try {
+        const response = await fetch("http://localhost:3100/clientes/vistaClientes")
+        if (!response.ok) throw new Error("Error en la respuesta de la API")
+        const data = await response.json()
+
+        if (data.success && Array.isArray(data.tables) && Array.isArray(data.tables[0])) {
+          setClientes(data.tables[0])
+        } else {
+          console.warn("Formato de respuesta inesperado:", data)
+        }
+      } catch (error) {
+        console.error("Error al cargar los datos de los clientes:", error)
+      }
+    }
+
+    fetchClientes()
+  }, [])
 
   const getEstadoBadge = (estado: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -32,6 +40,10 @@ export default function ClientesPage() {
       Inactivo: "secondary",
       Suspendido: "destructive",
       Nuevo: "outline",
+      Revisión: "outline",
+      Retirado: "secondary",
+      Otros: "outline",
+      Congelado: "secondary",
     }
     return <Badge variant={variants[estado] || "outline"}>{estado}</Badge>
   }
@@ -86,31 +98,43 @@ export default function ClientesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clientes.map((cliente) => (
-                <TableRow key={cliente.cedula}>
-                  <TableCell className="font-medium">{cliente.cedula}</TableCell>
-                  <TableCell>{cliente.nombre}</TableCell>
-                  <TableCell>{cliente.telefono}</TableCell>
-                  <TableCell>{cliente.fecha_registro}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div>{cliente.tipo_membresia}</div>
-                      <div className="text-muted-foreground">Exp: {cliente.fecha_expiracion}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{getEstadoBadge(cliente.estado_cliente)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {clientes
+                .filter((cliente) =>
+                  `${cliente.nombre} ${cliente.apellido1} ${cliente.apellido2} ${cliente.cedula}`
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase())
+                )
+                .map((cliente) => (
+                  <TableRow key={cliente.cedula}>
+                    <TableCell className="font-medium">{cliente.cedula}</TableCell>
+                    <TableCell>{`${cliente.nombre} ${cliente.apellido1} ${cliente.apellido2}`}</TableCell>
+                    <TableCell>{cliente.telefono}</TableCell>
+                    <TableCell>
+                      {new Date(cliente.fecha_registro).toLocaleDateString("es-CR")}
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div>{cliente.tipo_membresia ?? "Sin membresía"}</div>
+                        {cliente.fecha_expiracion && (
+                          <div className="text-muted-foreground">
+                            Exp: {new Date(cliente.fecha_expiracion).toLocaleDateString("es-CR")}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{getEstadoBadge(cliente.estado_cliente)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </CardContent>
