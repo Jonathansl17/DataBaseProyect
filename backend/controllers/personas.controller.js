@@ -154,7 +154,7 @@ export const vistaClientes = async(req,res) =>{
     }
 
     try{
-        await connection.
+        const result =await connection.
         request().query("SELECT * FROM vista_clientes");
         console.log(result)
         res.json({

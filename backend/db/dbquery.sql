@@ -199,9 +199,9 @@ CREATE TABLE cliente_membresias(
 
 --Tabla de membresias
 CREATE TABLE membresia(
-	id_membresia		INT				NOT NULL,
-	fecha_expiracion	DATE			NOT NULL,
-	tipo				TINYINT			NOT NULL
+	id_membresia		INT	IDENTITY(1,1)	NOT NULL,
+	fecha_expiracion	DATE				NOT NULL,
+	tipo				TINYINT				NOT NULL
 
 	CONSTRAINT PK_id_membresia_membresia PRIMARY KEY(id_membresia)
 )
@@ -542,35 +542,92 @@ INSERT INTO generos (id_genero, genero) VALUES
 (1,'Masculino'),(2,'Femenino');
 
 -- Tabla persona
-INSERT INTO persona (cedula, nombre, apellido1,apellido2, genero, distrito, correo, fecha_nacimiento, edad) VALUES
-(118560552,'Luis','Castro','Madriz',1,1,'luis@correo.com','1990-05-15',5),
-(203456789,'María','Soto','Rodriguez',2,2,'maria@correo.com','1995-03-22',29),
-(304567890,'Carlos','Mora','Vazques',1,3,'carlos@correo.com','1985-11-30',38),
-(409876543,'Ana','Rojas','Mora',2,4,'ana@correo.com','1998-07-09',25),
-(512345678,'Javier','Chacón','Rojas',1,5,'javier@correo.com','2000-01-01',24),
-(612345678,'Paula','Ramírez','Sanchez',2,6,'paula@correo.com','1994-06-12',30),
-(701234567,'Diego','Fernández','Perez',1,7,'diego@correo.com','1992-08-19',32),
-(812345679,'Sofía','Campos','Retana',2,8,'sofia@correo.com','1996-12-01',27),
-(902345678,'Marco','Quesada','Carrera',1,9,'marco@correo.com','1989-02-28',35),
-(100123456,'Valeria','Chinchilla','Lopez',2,10,'valeria@correo.com','2001-04-04',23);
+INSERT INTO persona (cedula, nombre, apellido1, apellido2, genero, distrito, correo, fecha_nacimiento, edad) VALUES
+(414086906, 'Mónica', 'Soto', 'Campos', 2, 1, 'mónica1@gmail.com', '2002-01-05', 23),
+(800308848, 'Lucía', 'Chinchilla', 'Gómez', 2, 10, 'lucía2@correo.com', '2000-11-03', 25),
+(746841900, 'Tomás', 'Vargas', 'Castro', 1, 9, 'tomás3@gmail.com', '1999-09-30', 26),
+(767402437, 'Paula', 'Rojas', 'Fernández', 1, 4, 'paula4@correo.com', '2008-05-01', 17),
+(270735008, 'Ana', 'Campos', 'Chinchilla', 2, 8, 'ana5@example.com', '2006-03-21', 19),
+(931161349, 'Tatiana', 'Castro', 'Alvarado', 2, 7, 'tatiana6@correo.com', '2004-12-28', 20),
+(393040211, 'Javier', 'Chinchilla', 'Mora', 1, 3, 'javier7@example.com', '1996-10-30', 27),
+(290719496, 'Lucía', 'Gómez', 'Vargas', 2, 6, 'lucía8@correo.com', '1998-09-25', 25),
+(867978083, 'Luis', 'Alvarado', 'Campos', 1, 5, 'luis9@correo.com', '2003-05-01', 21),
+(934827096, 'Emilio', 'Quesada', 'Gómez', 1, 2, 'emilio10@example.com', '1997-11-12', 26),
+(681366395, 'Camila', 'Fernández', 'Chinchilla', 2, 1, 'camila11@correo.com', '1993-02-08', 31),
+(281520804, 'Pedro', 'Chacón', 'Martínez', 1, 2, 'pedro12@example.com', '1990-08-20', 33),
+(261935470, 'Sebastián', 'Gómez', 'Vargas', 1, 3, 'sebastián13@correo.com', '1991-09-10', 32),
+(142192323, 'Gabriel', 'Pérez', 'Chinchilla', 1, 4, 'gabriel14@example.com', '1992-07-03', 31),
+(569206408, 'Valeria', 'Mora', 'Campos', 2, 5, 'valeria15@gmail.com', '1995-05-15', 30),
+(373450054, 'Andrea', 'Castro', 'Gómez', 2, 6, 'andrea16@correo.com', '2000-12-25', 24),
+(198689770, 'Juan', 'Campos', 'Quesada', 1, 7, 'juan17@correo.com', '1999-10-14', 25),
+(866266009, 'Laura', 'Ramírez', 'Chinchilla', 2, 8, 'laura18@gmail.com', '1998-11-11', 25),
+(758085848, 'Isabel', 'Soto', 'Gómez', 2, 9, 'isabel19@correo.com', '1997-01-09', 27),
+(920327174, 'Ricardo', 'Chacón', 'Soto', 1, 10, 'ricardo20@example.com', '1996-05-24', 28),
+(264451244, 'Natalia', 'Castro', 'Mora', 2, 1, 'natalia21@correo.com', '2002-09-15', 22),
+(227902729, 'María', 'Vargas', 'Alvarado', 2, 2, 'maría22@gmail.com', '2003-03-07', 21),
+(273939798, 'Andrés', 'Gómez', 'Soto', 1, 3, 'andrés23@example.com', '1995-06-19', 28),
+(209902497, 'Carlos', 'Fernández', 'Ramírez', 1, 4, 'carlos24@correo.com', '1993-04-01', 31),
+(347260670, 'Diego', 'Campos', 'Martínez', 1, 5, 'diego25@correo.com', '1991-08-22', 32),
+(586898512, 'Daniela', 'Gómez', 'Pérez', 2, 6, 'daniela26@example.com', '1999-07-07', 25),
+(962000470, 'Esteban', 'Vargas', 'Chinchilla', 1, 7, 'esteban27@correo.com', '2000-10-30', 23),
+(352890774, 'Elena', 'Quesada', 'Alvarado', 2, 8, 'elena28@example.com', '2004-06-14', 20),
+(313189524, 'Fernando', 'Soto', 'Castro', 1, 9, 'fernando29@correo.com', '2002-11-08', 22),
+(711248682, 'Tatiana', 'Ramírez', 'Mora', 2, 10, 'tatiana30@example.com', '2005-01-03', 19);
+
 
 -- Tabla telefonos_personas
 INSERT INTO telefonos_personas (cedula_persona, telefono) VALUES
-(118560552,88881234),(203456789,89994321),(304567890,87001234),
-(409876543,88009876),(512345678,86543210),(612345678,89000000),
-(701234567,85005050),(812345679,83003333),(902345678,84555555),
-(100123456,80000001);
+(414086906, 69138025),
+(800308848, 88122452),
+(746841900, 44456033),
+(767402437, 93412129),
+(270735008, 30750417),
+(931161349, 87109040),
+(393040211, 23331464),
+(290719496, 37959276),
+(867978083, 71413782),
+(934827096, 58514372),
+(681366395, 38934314),
+(281520804, 50430892),
+(261935470, 79960784),
+(142192323, 75799887),
+(569206408, 76775504),
+(373450054, 98648661),
+(198689770, 40796733),
+(866266009, 37061941),
+(758085848, 68129577),
+(920327174, 62319951),
+(264451244, 71527865),
+(227902729, 35321064),
+(273939798, 43204296),
+(209902497, 63615721),
+(347260670, 40214986),
+(586898512, 89037154),
+(962000470, 39260361),
+(352890774, 94309934),
+(313189524, 53631283),
+(711248682, 92295715);
+
 
 -- Tabla entrenador
 INSERT INTO entrenador (cedula, fecha_contratacion, tipo) VALUES
-(118560552,'2025-01-01','Personal'),
-(203456789,'2025-06-15','Funcional');
+(373450054, '2025-01-01', 'Personal'),
+(198689770, '2025-01-01', 'Personal'),
+(866266009, '2025-01-01', 'General'),
+(758085848, '2025-01-01', 'Funcional'),
+(920327174, '2025-01-01', 'Personal');
+
+
 
 -- Tabla administrador
 INSERT INTO administrador (cedula, fecha_contratacion) VALUES
-(304567890,'2025-01-01'),
-(409876543,'2025-01-01'),
-(512345678,'2025-01-01');
+(264451244, '2025-01-01'),
+(227902729, '2025-01-01'),
+(273939798, '2025-01-01'),
+(209902497, '2025-01-01'),
+(347260670, '2025-01-01');
+
+
 
 -- Tabla estados_clientes
 INSERT INTO estados_clientes (id_estado, estado) VALUES
@@ -580,9 +637,23 @@ INSERT INTO estados_clientes (id_estado, estado) VALUES
 
 -- Tabla cliente
 INSERT INTO cliente (cedula, estado, fecha_registro) VALUES
-(612345678,1,'2025-01-01'),(701234567,2,'2025-02-01'),
-(812345679,3,'2025-01-01'),(902345678,4,'2025-01-01'),
-(100123456,5,'2025-02-01');
+(414086906, 2, '2025-01-01'),
+(800308848, 5, '2025-01-01'),
+(746841900, 10, '2025-01-01'),
+(767402437, 2, '2025-01-01'),
+(270735008, 6, '2025-01-01'),
+(931161349, 7, '2025-01-01'),
+(393040211, 4, '2025-01-01'),
+(290719496, 5, '2025-01-01'),
+(867978083, 2, '2025-01-01'),
+(934827096, 10, '2025-01-01'),
+(681366395, 4, '2025-01-01'),
+(281520804, 9, '2025-01-01'),
+(261935470, 2, '2025-01-01'),
+(142192323, 6, '2025-01-01'),
+(569206408, 10, '2025-01-01');
+
+
 
 -- Tabla tipo_membresia
 INSERT INTO tipo_membresia (id_tipo_membresia, tipo) VALUES
@@ -591,16 +662,39 @@ INSERT INTO tipo_membresia (id_tipo_membresia, tipo) VALUES
 (8,'VIP'),(9,'Combo'),(10,'Ilimitado');
 
 -- Tabla membresia
-INSERT INTO membresia (id_membresia, fecha_expiracion, tipo) VALUES
-(1,'2025-06-01',1),(2,'2025-09-01',2),(3,'2025-05-01',3),
-(4,'2025-12-01',4),(5,'2025-05-04',5),(6,'2025-05-05',6),
-(7,'2025-05-06',7),(8,'2025-05-07',8),(9,'2025-05-08',9),
-(10,'2025-05-09',10);
+INSERT INTO membresia (fecha_expiracion, tipo) VALUES
+('2025-06-01',1),
+('2025-09-01',2),
+('2025-05-01',3),
+('2025-12-01',4),
+('2025-05-04',5),
+('2025-05-05',6),
+('2025-05-06',7),
+('2025-05-07',8),
+('2025-05-08',9),
+('2025-05-09',10);
+
 
 -- Tabla cliente_membresias
 INSERT INTO cliente_membresias (cedula, id_membresia) VALUES
-(612345678,1),(701234567,2),(812345679,3),
-(902345678,4),(100123456,5);
+(414086906, 1),
+(800308848, 2),
+(746841900, 3),
+(767402437, 4),
+(270735008, 5),
+(931161349, 6),
+(393040211, 7),
+(290719496, 8),
+(867978083, 9),
+(934827096, 10),
+(681366395, 11),
+(281520804, 12),
+(261935470, 13),
+(142192323, 14),
+(569206408, 15);
+
+SELECT * FROM cliente_membresias
+
 
 -- Tabla clase
 INSERT INTO clase (id_clase, nombre, descripcion) VALUES
@@ -612,12 +706,31 @@ INSERT INTO clase (id_clase, nombre, descripcion) VALUES
 
 -- Tabla cliente_clase
 INSERT INTO cliente_clase (cedula, id_clase) VALUES
-(612345678,1),(701234567,2),(812345679,3),
-(902345678,4),(100123456,5);
+(414086906, 10),
+(800308848, 5),
+(746841900, 8),
+(767402437, 6),
+(270735008, 2),
+(931161349, 5),
+(393040211, 1),
+(290719496, 6),
+(867978083, 6),
+(934827096, 10),
+(681366395, 1),
+(281520804, 10),
+(261935470, 2),
+(142192323, 8),
+(569206408, 10);
+
 
 -- Tabla entrenador_clase
 INSERT INTO entrenador_clase (cedula, id_clase) VALUES
-(118560552,6),(203456789,7);
+(373450054, 9),
+(198689770, 6),
+(866266009, 3),
+(758085848, 3),
+(920327174, 10);
+
 
 -- Tabla estados_maquinas
 INSERT INTO estados_maquinas (id_estado, estado) VALUES
@@ -635,9 +748,12 @@ INSERT INTO maquina (id_maquina, estado, tipo, modelo, marca) VALUES
 
 -- Tabla admin_maquina
 INSERT INTO admin_maquina (cedula, id_maquina, ultima_revision, cant_maquinas) VALUES
-(304567890,1,'2025-04-01',1),(409876543,2,'2025-03-01',1),
-(512345678,3,'2025-05-01',1),(304567890,4,'2025-02-01',1),
-(409876543,5,'2025-01-01',1);
+(264451244, 1, '2025-05-01', 1),
+(227902729, 2, '2025-05-01', 1),
+(273939798, 3, '2025-05-01', 1),
+(209902497, 4, '2025-05-01', 1),
+(347260670, 5, '2025-05-01', 1);
+
 
 -- Tabla grupo
 INSERT INTO grupo (numero_grupo, cupo_disponible, cantidad_matriculados) VALUES
@@ -655,26 +771,49 @@ INSERT INTO horario (id_horario, dia, hora_inicio, hora_fin) VALUES
 
 -- Tabla sesion
 INSERT INTO sesion (id_sesion, numero_grupo, id_horario, id_clase) VALUES
-(1,1,1,1),(2,2,2,2),(3,3,3,3),(4,4,4,4),(5,5,5,5),
-(6,6,6,6),(7,7,7,7),(8,8,8,8),(9,9,9,9),(10,10,10,10);
+(1, 1, 1, 1),
+(2, 2, 2, 2),
+(3, 3, 3, 3),
+(4, 4, 4, 4),
+(5, 5, 5, 5),
+(6, 6, 6, 6),
+(7, 7, 7, 7),
+(8, 8, 8, 8),
+(9, 9, 9, 9),
+(10, 10, 10, 10);
+
 
 
 -- Insertar sesiones programadas (relacionadas con las sesiones existentes)
 INSERT INTO sesion_programada (id_sesion, fecha) VALUES
-(1, '2025-05-22'), -- Zumba
-(2, '2025-05-22'), -- Spinning
-(3, '2025-05-23'), -- Yoga
-(4, '2025-05-23'), -- Crossfit
-(5, '2025-05-24'); -- Pilates
+(1, '2025-06-01'),
+(2, '2025-06-02'),
+(3, '2025-06-03'),
+(4, '2025-06-04'),
+(5, '2025-06-05'),
+(6, '2025-06-06'),
+(7, '2025-06-07'),
+(8, '2025-06-08'),
+(9, '2025-06-09'),
+(10, '2025-06-10');
+
+
 
 
 -- Insertar asistencias de los clientes según la clase asignada
 INSERT INTO asistencia_cliente (id_sesion_programada, cedula, asistio) VALUES
-(1, 612345678, 1),  -- Paula a Zumba
-(2, 701234567, 1),  -- Diego a Spinning
-(3, 812345679, 1),  -- Sofía a Yoga
-(4, 902345678, 1),  -- Marco a Crossfit
-(5, 100123456, 1);  -- Valeria a Pilates
+(1, 414086906, 1),
+(2, 800308848, 1),
+(3, 746841900, 1),
+(4, 767402437, 1),
+(5, 270735008, 1),
+(6, 931161349, 1),
+(7, 393040211, 1),
+(8, 290719496, 1),
+(9, 867978083, 1),
+(10, 934827096, 1);
+
+
 
 
 
