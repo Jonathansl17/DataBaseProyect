@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 
-import basicRoutes from './routes/basic.routes.js'
+import helperRoutes from './routes/helper.routes.js'
 import dbRoutes from './routes/db.routes.js'
 import clienteRoutes from './routes/cliente.routes.js'
 import membresiaRoutes from './routes/membresia.routes.js'
@@ -15,7 +15,7 @@ const port = 3100;
 app.use(cors());
 app.use(express.json());
 
-app.use('/hello', basicRoutes);
+app.use('/consultas', helperRoutes);
 app.use('/connection', dbRoutes)
 app.use('/clientes', clienteRoutes)
 app.use('/membresias', membresiaRoutes)

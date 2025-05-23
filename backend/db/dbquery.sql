@@ -952,7 +952,6 @@ SELECT
 	dm.tipo_membresia,
 	dc.estado_cliente
 FROM
-	-- Subconsulta dc (datos cliente): datos del cliente + persona + teléfono + estado
 	(
 		SELECT
 			p.nombre,
@@ -967,9 +966,7 @@ FROM
 		JOIN telefonos_personas tp ON c.cedula = tp.cedula_persona
 		JOIN estados_clientes ec ON c.estado = ec.id_estado
 	) AS dc
-
-	-- Subconsulta dm (datos membresia): membresia y tipo
-	LEFT JOIN (
+LEFT JOIN (
 		SELECT
 			cm.cedula,
 			me.fecha_expiracion,
@@ -977,9 +974,10 @@ FROM
 		FROM cliente_membresias cm
 		JOIN membresia me ON cm.id_membresia = me.id_membresia
 		JOIN tipo_membresia tm ON me.tipo = tm.id_tipo_membresia
-	) AS dm
+) AS dm
 	ON dc.cedula = dm.cedula;
 GO
+
 
 SELECT * FROM vista_clientes
 GO
@@ -1048,11 +1046,12 @@ GO
 
 
 --Procedimiento almacenado transaccional para insertar un cliente
-CREATE PROCEDURE insertar_cliente (
+CREATE OR ALTER PROCEDURE insertar_cliente (
     @cedula CedulaRestringida,
     @nombre NombreYApellidosLimpios,
     @apellido1 NombreYApellidosLimpios,
     @apellido2 NombreYApellidosLimpios,
+    @telefono TelefonoRestringido,
     @genero TINYINT,
     @distrito SMALLINT,
     @correo CorreoRestringido,
@@ -1065,19 +1064,23 @@ BEGIN
         BEGIN TRANSACTION;
 
         -- Validar que la persona no exista ya
-        IF EXISTS (
-            SELECT 1 FROM persona WHERE cedula = @cedula
-        )
+        IF EXISTS (SELECT 1 FROM persona WHERE cedula = @cedula)
         BEGIN
             RAISERROR('El cliente ya existe en la base de datos.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END
 
-        -- Validar que el correo no este registrado por otra persona
-        IF EXISTS (
-            SELECT 1 FROM persona WHERE correo = @correo
-        )
+        -- Validar que el teléfono no esté ya registrado
+        IF EXISTS (SELECT 1 FROM telefonos_personas WHERE telefono = @telefono)
+        BEGIN
+            RAISERROR('Este teléfono está registrado para otra persona.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Validar que el correo no esté registrado por otra persona
+        IF EXISTS (SELECT 1 FROM persona WHERE correo = @correo)
         BEGIN
             RAISERROR('El correo ya está registrado por otra persona.', 16, 1);
             ROLLBACK TRANSACTION;
@@ -1085,25 +1088,20 @@ BEGIN
         END
 
         -- Validar que el distrito exista
-        IF NOT EXISTS (
-            SELECT 1 FROM distritos WHERE id_distrito = @distrito
-        )
+        IF NOT EXISTS (SELECT 1 FROM distritos WHERE id_distrito = @distrito)
         BEGIN
             RAISERROR('El distrito indicado no existe.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END
 
-        -- Validar que el genero exista
-        IF NOT EXISTS (
-            SELECT 1 FROM generos WHERE id_genero = @genero
-        )
+        -- Validar que el género exista
+        IF NOT EXISTS (SELECT 1 FROM generos WHERE id_genero = @genero)
         BEGIN
             RAISERROR('El género indicado no existe.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END
-
 
         -- Insertar en persona
         INSERT INTO persona (
@@ -1121,6 +1119,10 @@ BEGIN
         INSERT INTO cliente (cedula, estado)
         VALUES (@cedula, 1);
 
+        -- Insertar el teléfono
+        INSERT INTO telefonos_personas (cedula_persona, telefono)
+        VALUES (@cedula, @telefono);
+
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
@@ -1133,6 +1135,7 @@ BEGIN
     END CATCH
 END;
 GO
+
 
 
 
@@ -1470,11 +1473,17 @@ EXEC obtener_estadisticas_acumuladas_por_fecha '2025-05-23';
 
 GO
 
+SELECT * FROM distritos
 
 
-
-
-
+SELECT 
+	p.nombre,
+	c.estado
+FROM persona p
+	JOIN cliente c
+	ON p.cedula = c.cedula
+	WHERE p.cedula = '112828821'
+SELECT * FROM cliente
 
 GO
 --Procedimiento almacenado para renovar la membresia de un cliente

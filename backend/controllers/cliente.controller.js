@@ -17,6 +17,7 @@ export const insertarCliente = async (req, res) => {
         nombre,
         apellido1,
         apellido2,
+        telefono,
         genero,
         distrito,
         correo,
@@ -24,7 +25,7 @@ export const insertarCliente = async (req, res) => {
         edad,
     } = req.body;
 
-    if (!cedula || !nombre || !apellido1 || !genero || !distrito || !correo || !fecha_nacimiento || !edad) {
+    if (!cedula || !nombre || !apellido1 || !telefono || !genero || !distrito || !correo || !fecha_nacimiento || !edad) {
         return res.status(400).json({
             success: false,
             message: "Todos los campos son obligatorios"
@@ -38,6 +39,7 @@ export const insertarCliente = async (req, res) => {
             .input("nombre", sql.VarChar(20), nombre)
             .input("apellido1", sql.VarChar(20), apellido1)
             .input("apellido2", sql.VarChar(20), apellido2)
+            .input("telefono", sql.VarChar(8), telefono)
             .input("genero", sql.TinyInt, genero)
             .input("distrito", sql.SmallInt, distrito)
             .input("correo", sql.VarChar(50), correo)

@@ -26,6 +26,8 @@ export default function Dashboard() {
   const [fecha, setFecha] = useState<string>(() => new Date().toISOString().split("T")[0])
   const [loading, setLoading] = useState(false)
 
+  
+
   const fetchEstadisticas = async (fechaEnvio: string) => {
     try {
       setLoading(true)

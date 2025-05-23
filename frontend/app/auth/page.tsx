@@ -52,7 +52,10 @@
             <div className="text-center">
             <h1 className="text-3xl font-bold">Bienvenido a la Aplicación de Base de Datos</h1>
             <p className="text-muted-foreground text-sm mt-2">
-                Conéctate a tu instancia de SQL Server para continuar
+                Conéctate a tu instancia de SQL Server para continuar, recuerda que debes tener el servidor en ejecución y la base de datos creada
+
+                El query de creacion se encuentra en la carpeta de backend, en la ruta:
+                <code className="text-blue-500"> backend/src/db/dbquery.sql</code>
             </p>
             </div>
 
