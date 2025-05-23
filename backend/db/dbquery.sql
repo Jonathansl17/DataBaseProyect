@@ -200,7 +200,7 @@ CREATE TABLE cliente_membresias(
 --Tabla de membresias
 CREATE TABLE membresia(
 	id_membresia		INT	IDENTITY(1,1)	NOT NULL,
-	fecha_expiracion	DATE				NOT NULL,
+	fecha_expiracion	DATE				,
 	tipo				TINYINT				NOT NULL
 
 	CONSTRAINT PK_id_membresia_membresia PRIMARY KEY(id_membresia)
@@ -214,6 +214,28 @@ CREATE TABLE tipo_membresia(
 
 	CONSTRAINT PK_id_tipo_tipo_membresia PRIMARY KEY(id_tipo_membresia)
 )
+
+
+--Tabla de formas de pago
+CREATE TABLE formas_de_pago (
+    id_forma_pago INT ,
+    formaDePago VARCHAR(30) NOT NULL
+
+	CONSTRAINT PK_id_forma_pago_formas_de_pago PRIMARY KEY(id_forma_pago)
+);
+
+
+--Tablas de pago
+CREATE TABLE pagos (
+    id_pago INT IDENTITY(1,1),
+    fecha_pago DATE						NOT NULL,
+    id_membresia INT					NOT NULL,
+	cedula_cliente CedulaRestringida	NOT NULL,
+    forma_pago INT						NOT NULL,
+    monto INT							NOT NULL
+	CONSTRAINT PK_id_pago_pagos PRIMARY KEY(id_pago)
+);
+
 
 
 --Tabla intermedia de cliente_clase
@@ -493,6 +515,30 @@ ON DELETE CASCADE
 ON UPDATE CASCADE;
 GO
 
+--Llaves foraneas que tiene que ver con membresia y pago
+--FK: pagos -> membresia
+ALTER TABLE pagos
+ADD CONSTRAINT FK_pago_membresia FOREIGN KEY (id_membresia)
+REFERENCES membresia(id_membresia)
+ON DELETE CASCADE
+ON UPDATE CASCADE
+GO
+
+--FK: pagos -> forma_pago
+ALTER TABLE pagos
+ADD CONSTRAINT FK_pago_forma_pago FOREIGN KEY (forma_pago)
+REFERENCES formas_de_pago(id_forma_pago)
+ON DELETE CASCADE
+ON UPDATE CASCADE
+GO
+
+--FK: pagos -> cliente
+ALTER TABLE pagos
+ADD CONSTRAINT FK_pago_cliente FOREIGN KEY (cedula_cliente)
+REFERENCES cliente(cedula)
+ON DELETE CASCADE
+ON UPDATE CASCADE
+
 
 
 
@@ -514,6 +560,50 @@ ADD CONSTRAINT CK_grupo_cupos CHECK (cantidad_matriculados <= cupo_disponible);
 CREATE NONCLUSTERED INDEX idx_persona_nombre ON persona(nombre);
 CREATE NONCLUSTERED INDEX idx_persona_apellido1 ON persona(apellido1);
 CREATE NONCLUSTERED INDEX idx_persona_apellido2 ON persona(apellido2);
+
+
+/*Trigger que determina automaticamente la fecha de expiracion de la membresia de acuerdo al tipo,
+Tipo 1 → 'Mensual' → +30 días
+
+Tipo 2 → 'Trimestral' → +90 días
+
+Tipo 3 → 'Anual' → +365 días
+
+Tipo 4 → 'Semestral' → +180 días
+
+Tipo 5 → 'Diaria' → +1 día
+*/
+GO
+CREATE OR ALTER TRIGGER trigger_set_fecha_expiracion_membresia
+ON membresia
+INSTEAD OF INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (
+        SELECT 1
+        FROM inserted
+        WHERE tipo NOT IN (1, 2, 3, 4, 5)
+    )
+    BEGIN
+        RAISERROR('Tipo de membresía inválido. Solo se permiten los valores 1-5.', 16, 1);
+        RETURN;
+    END
+
+    INSERT INTO membresia (fecha_expiracion, tipo)
+    SELECT 
+        CASE tipo
+            WHEN 1 THEN DATEADD(DAY, 30, GETDATE())
+            WHEN 2 THEN DATEADD(DAY, 90, GETDATE())
+            WHEN 3 THEN DATEADD(DAY, 365, GETDATE())
+            WHEN 4 THEN DATEADD(DAY, 180, GETDATE())
+            WHEN 5 THEN DATEADD(DAY, 1, GETDATE())
+        END,
+        tipo
+    FROM inserted;
+END;
+GO
 
 
 
@@ -543,36 +633,36 @@ INSERT INTO generos (id_genero, genero) VALUES
 
 -- Tabla persona
 INSERT INTO persona (cedula, nombre, apellido1, apellido2, genero, distrito, correo, fecha_nacimiento, edad) VALUES
-(414086906, 'Mónica', 'Soto', 'Campos', 2, 1, 'mónica1@gmail.com', '2002-01-05', 23),
-(800308848, 'Lucía', 'Chinchilla', 'Gómez', 2, 10, 'lucía2@correo.com', '2000-11-03', 25),
-(746841900, 'Tomás', 'Vargas', 'Castro', 1, 9, 'tomás3@gmail.com', '1999-09-30', 26),
-(767402437, 'Paula', 'Rojas', 'Fernández', 1, 4, 'paula4@correo.com', '2008-05-01', 17),
-(270735008, 'Ana', 'Campos', 'Chinchilla', 2, 8, 'ana5@example.com', '2006-03-21', 19),
-(931161349, 'Tatiana', 'Castro', 'Alvarado', 2, 7, 'tatiana6@correo.com', '2004-12-28', 20),
-(393040211, 'Javier', 'Chinchilla', 'Mora', 1, 3, 'javier7@example.com', '1996-10-30', 27),
-(290719496, 'Lucía', 'Gómez', 'Vargas', 2, 6, 'lucía8@correo.com', '1998-09-25', 25),
-(867978083, 'Luis', 'Alvarado', 'Campos', 1, 5, 'luis9@correo.com', '2003-05-01', 21),
-(934827096, 'Emilio', 'Quesada', 'Gómez', 1, 2, 'emilio10@example.com', '1997-11-12', 26),
-(681366395, 'Camila', 'Fernández', 'Chinchilla', 2, 1, 'camila11@correo.com', '1993-02-08', 31),
-(281520804, 'Pedro', 'Chacón', 'Martínez', 1, 2, 'pedro12@example.com', '1990-08-20', 33),
-(261935470, 'Sebastián', 'Gómez', 'Vargas', 1, 3, 'sebastián13@correo.com', '1991-09-10', 32),
-(142192323, 'Gabriel', 'Pérez', 'Chinchilla', 1, 4, 'gabriel14@example.com', '1992-07-03', 31),
-(569206408, 'Valeria', 'Mora', 'Campos', 2, 5, 'valeria15@gmail.com', '1995-05-15', 30),
-(373450054, 'Andrea', 'Castro', 'Gómez', 2, 6, 'andrea16@correo.com', '2000-12-25', 24),
-(198689770, 'Juan', 'Campos', 'Quesada', 1, 7, 'juan17@correo.com', '1999-10-14', 25),
-(866266009, 'Laura', 'Ramírez', 'Chinchilla', 2, 8, 'laura18@gmail.com', '1998-11-11', 25),
-(758085848, 'Isabel', 'Soto', 'Gómez', 2, 9, 'isabel19@correo.com', '1997-01-09', 27),
-(920327174, 'Ricardo', 'Chacón', 'Soto', 1, 10, 'ricardo20@example.com', '1996-05-24', 28),
-(264451244, 'Natalia', 'Castro', 'Mora', 2, 1, 'natalia21@correo.com', '2002-09-15', 22),
-(227902729, 'María', 'Vargas', 'Alvarado', 2, 2, 'maría22@gmail.com', '2003-03-07', 21),
-(273939798, 'Andrés', 'Gómez', 'Soto', 1, 3, 'andrés23@example.com', '1995-06-19', 28),
-(209902497, 'Carlos', 'Fernández', 'Ramírez', 1, 4, 'carlos24@correo.com', '1993-04-01', 31),
-(347260670, 'Diego', 'Campos', 'Martínez', 1, 5, 'diego25@correo.com', '1991-08-22', 32),
-(586898512, 'Daniela', 'Gómez', 'Pérez', 2, 6, 'daniela26@example.com', '1999-07-07', 25),
-(962000470, 'Esteban', 'Vargas', 'Chinchilla', 1, 7, 'esteban27@correo.com', '2000-10-30', 23),
-(352890774, 'Elena', 'Quesada', 'Alvarado', 2, 8, 'elena28@example.com', '2004-06-14', 20),
-(313189524, 'Fernando', 'Soto', 'Castro', 1, 9, 'fernando29@correo.com', '2002-11-08', 22),
-(711248682, 'Tatiana', 'Ramírez', 'Mora', 2, 10, 'tatiana30@example.com', '2005-01-03', 19);
+('414086906', 'Mónica', 'Soto', 'Campos', 2, 1, 'mónica1@gmail.com', '2002-01-05', 23),
+('800308848', 'Lucía', 'Chinchilla', 'Gómez', 2, 10, 'lucía2@correo.com', '2000-11-03', 25),
+('746841900', 'Tomás', 'Vargas', 'Castro', 1, 9, 'tomás3@gmail.com', '1999-09-30', 26),
+('767402437', 'Paula', 'Rojas', 'Fernández', 1, 4, 'paula4@correo.com', '2008-05-01', 17),
+('270735008', 'Ana', 'Campos', 'Chinchilla', 2, 8, 'ana5@example.com', '2006-03-21', 19),
+('931161349', 'Tatiana', 'Castro', 'Alvarado', 2, 7, 'tatiana6@correo.com', '2004-12-28', 20),
+('393040211', 'Javier', 'Chinchilla', 'Mora', 1, 3, 'javier7@example.com', '1996-10-30', 27),
+('290719496', 'Lucía', 'Gómez', 'Vargas', 2, 6, 'lucía8@correo.com', '1998-09-25', 25),
+('867978083', 'Luis', 'Alvarado', 'Campos', 1, 5, 'luis9@correo.com', '2003-05-01', 21),
+('934827096', 'Emilio', 'Quesada', 'Gómez', 1, 2, 'emilio10@example.com', '1997-11-12', 26),
+('681366395', 'Camila', 'Fernández', 'Chinchilla', 2, 1, 'camila11@correo.com', '1993-02-08', 31),
+('281520804', 'Pedro', 'Chacón', 'Martínez', 1, 2, 'pedro12@example.com', '1990-08-20', 33),
+('261935470', 'Sebastián', 'Gómez', 'Vargas', 1, 3, 'sebastián13@correo.com', '1991-09-10', 32),
+('142192323', 'Gabriel', 'Pérez', 'Chinchilla', 1, 4, 'gabriel14@example.com', '1992-07-03', 31),
+('569206408', 'Valeria', 'Mora', 'Campos', 2, 5, 'valeria15@gmail.com', '1995-05-15', 30),
+('373450054', 'Andrea', 'Castro', 'Gómez', 2, 6, 'andrea16@correo.com', '2000-12-25', 24),
+('198689770', 'Juan', 'Campos', 'Quesada', 1, 7, 'juan17@correo.com', '1999-10-14', 25),
+('866266009', 'Laura', 'Ramírez', 'Chinchilla', 2, 8, 'laura18@gmail.com', '1998-11-11', 25),
+('758085848', 'Isabel', 'Soto', 'Gómez', 2, 9, 'isabel19@correo.com', '1997-01-09', 27),
+('920327174', 'Ricardo', 'Chacón', 'Soto', 1, 10, 'ricardo20@example.com', '1996-05-24', 28),
+('264451244', 'Natalia', 'Castro', 'Mora', 2, 1, 'natalia21@correo.com', '2002-09-15', 22),
+('227902729', 'María', 'Vargas', 'Alvarado', 2, 2, 'maría22@gmail.com', '2003-03-07', 21),
+('273939798', 'Andrés', 'Gómez', 'Soto', 1, 3, 'andrés23@example.com', '1995-06-19', 28),
+('209902497', 'Carlos', 'Fernández', 'Ramírez', 1, 4, 'carlos24@correo.com', '1993-04-01', 31),
+('347260670', 'Diego', 'Campos', 'Martínez', 1, 5, 'diego25@correo.com', '1991-08-22', 32),
+('586898512', 'Daniela', 'Gómez', 'Pérez', 2, 6, 'daniela26@example.com', '1999-07-07', 25),
+('962000470', 'Esteban', 'Vargas', 'Chinchilla', 1, 7, 'esteban27@correo.com', '2000-10-30', 23),
+('352890774', 'Elena', 'Quesada', 'Alvarado', 2, 8, 'elena28@example.com', '2004-06-14', 20),
+('313189524', 'Fernando', 'Soto', 'Castro', 1, 9, 'fernando29@correo.com', '2002-11-08', 22),
+('711248682', 'Tatiana', 'Ramírez', 'Mora', 2, 10, 'tatiana30@example.com', '2005-01-03', 19);
 
 
 -- Tabla telefonos_personas
@@ -658,21 +748,20 @@ INSERT INTO cliente (cedula, estado, fecha_registro) VALUES
 -- Tabla tipo_membresia
 INSERT INTO tipo_membresia (id_tipo_membresia, tipo) VALUES
 (1,'Mensual'),(2,'Trimestral'),(3,'Anual'),
-(4,'Semestral'),(5,'Diaria'),(6,'Free'),(7,'Promo'),
-(8,'VIP'),(9,'Combo'),(10,'Ilimitado');
+(4,'Semestral'),(5,'Diaria')
 
 -- Tabla membresia
-INSERT INTO membresia (fecha_expiracion, tipo) VALUES
-('2025-06-01',1),
-('2025-09-01',2),
-('2025-05-01',3),
-('2025-12-01',4),
-('2025-05-04',5),
-('2025-05-05',6),
-('2025-05-06',7),
-('2025-05-07',8),
-('2025-05-08',9),
-('2025-05-09',10);
+INSERT INTO membresia (tipo) VALUES
+(1),
+(2),
+(3),
+(4),
+(5),
+(2),
+(4),
+(5),
+(1),
+(2);
 
 
 -- Tabla cliente_membresias
@@ -685,15 +774,8 @@ INSERT INTO cliente_membresias (cedula, id_membresia) VALUES
 (931161349, 6),
 (393040211, 7),
 (290719496, 8),
-(867978083, 9),
-(934827096, 10),
-(681366395, 11),
-(281520804, 12),
-(261935470, 13),
-(142192323, 14),
-(569206408, 15);
+(867978083, 9)
 
-SELECT * FROM cliente_membresias
 
 
 -- Tabla clase
@@ -715,13 +797,11 @@ INSERT INTO cliente_clase (cedula, id_clase) VALUES
 (393040211, 1),
 (290719496, 6),
 (867978083, 6),
-(934827096, 10),
 (681366395, 1),
 (281520804, 10),
 (261935470, 2),
 (142192323, 8),
-(569206408, 10);
-
+(569206408, 10)
 
 -- Tabla entrenador_clase
 INSERT INTO entrenador_clase (cedula, id_clase) VALUES
@@ -810,11 +890,28 @@ INSERT INTO asistencia_cliente (id_sesion_programada, cedula, asistio) VALUES
 (6, 931161349, 1),
 (7, 393040211, 1),
 (8, 290719496, 1),
-(9, 867978083, 1),
-(10, 934827096, 1);
+(9, 867978083, 1)
 
 
 
+INSERT INTO formas_de_pago(id_forma_pago, formaDePago)VALUES
+(1,'Tarjeta'),
+(2,'Simpe'),
+(3,'Efectivo')
+
+
+INSERT INTO pagos (fecha_pago, id_membresia, cedula_cliente, forma_pago, monto) VALUES 
+('2025-05-23', 1, 414086906, 1, 15000), -- Mensual
+('2025-05-23', 2, 800308848, 2, 40000), -- Trimestral
+('2025-05-23', 3, 746841900, 3, 120000), -- Anual
+('2025-05-23', 4, 767402437, 1, 80000), -- Semestral
+('2025-05-23', 5, 270735008, 2, 5000), -- Diaria
+('2025-05-23', 6, 931161349, 3, 35000), -- Trimestral
+('2025-05-23', 7, 393040211, 1, 80000), -- Semestral
+('2025-05-23', 8, 290719496, 2, 5000), -- Diaria
+('2025-05-23', 9, 867978083, 1, 15000); -- Mensual
+
+SELECT * FROM pagos
 
 
 SELECT * FROM provincias;
@@ -1144,6 +1241,196 @@ END;
 GO
 
 
+--Procedimiento almacenado transaccional para inscribir un cliente a una clase
+CREATE PROCEDURE asignar_clase_a_cliente (
+    @cedula CedulaRestringida,
+    @id_clase INT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+
+        IF NOT EXISTS (SELECT 1 FROM cliente WHERE cedula = @cedula)
+        BEGIN
+            RAISERROR('Cliente no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        IF NOT EXISTS (SELECT 1 FROM clase WHERE id_clase = @id_clase)
+        BEGIN
+            RAISERROR('Clase no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Verificar duplicado
+        IF EXISTS (SELECT 1 FROM cliente_clase WHERE cedula = @cedula AND id_clase = @id_clase)
+        BEGIN
+            RAISERROR('Cliente ya está inscrito en esta clase.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Insertar
+        INSERT INTO cliente_clase (cedula, id_clase)
+        VALUES (@cedula, @id_clase);
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        RAISERROR(@err, 16, 1);
+    END CATCH
+END;
+GO
+
+
+
+--Procedimiento almacenado transaccional para registrar la asistencia de una clase programada
+CREATE PROCEDURE registrar_asistencia_cliente (
+    @cedula CedulaRestringida,
+    @id_sesion_programada INT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Validar existencia del cliente
+        IF NOT EXISTS (SELECT 1 FROM cliente WHERE cedula = @cedula)
+        BEGIN
+            RAISERROR('Cliente no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Validar existencia de sesion programada
+        IF NOT EXISTS (SELECT 1 FROM sesion_programada WHERE id_sesion_programada = @id_sesion_programada)
+        BEGIN
+            RAISERROR('Sesión programada no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Verificar si ya existe una asistencia registrada
+        IF EXISTS (SELECT 1 FROM asistencia_cliente WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada)
+        BEGIN
+            RAISERROR('Asistencia ya registrada.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Insertar la asistencia
+        INSERT INTO asistencia_cliente (cedula, id_sesion_programada, asistio)
+        VALUES (@cedula, @id_sesion_programada, 1);
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        RAISERROR(@err, 16, 1);
+    END CATCH
+END;
+GO
+
+
+GO
+--Procedimiento almacenado transaccional para registrar el pago de membresia a un cliente
+CREATE OR ALTER PROCEDURE registrar_pago_membresia (
+    @cedula_cliente CedulaRestringida,
+    @tipo_membresia TINYINT,
+    @monto DECIMAL(10,2),
+    @fecha_pago DATE,
+    @id_forma_pago INT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Validaciones
+        IF NOT EXISTS (SELECT 1 FROM cliente WHERE cedula = @cedula_cliente)
+        BEGIN
+            RAISERROR('Cliente no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        IF NOT EXISTS (SELECT 1 FROM formas_de_pago WHERE id_forma_pago = @id_forma_pago)
+        BEGIN
+            RAISERROR('Forma de pago no válida.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        IF NOT EXISTS (SELECT 1 FROM tipo_membresia WHERE id_tipo_membresia = @tipo_membresia)
+        BEGIN
+            RAISERROR('Tipo de membresía inválido.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Insertar membresía (el trigger se encarga de calcular la fecha)
+        INSERT INTO membresia (tipo) VALUES (@tipo_membresia);
+
+        -- Obtener el ID de la última membresía insertada, esto por que el trigger al encargarse
+		--de insertar, no permite el uso de scope identity
+        DECLARE @id_membresia INT;
+        SELECT TOP 1 @id_membresia = id_membresia FROM membresia ORDER BY id_membresia DESC;
+
+        -- Relacionar cliente con la membresía
+        INSERT INTO cliente_membresias (cedula, id_membresia)
+        VALUES (@cedula_cliente, @id_membresia);
+
+        -- Registrar el pago
+        INSERT INTO pagos (
+            fecha_pago,
+            id_membresia,
+            cedula_cliente,
+            forma_pago,
+            monto
+        )
+        VALUES (
+            @fecha_pago,
+            @id_membresia,
+            @cedula_cliente,
+            @id_forma_pago,
+            @monto
+        );
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        RAISERROR(@err, 16, 1);
+    END CATCH
+END;
+GO
+
+
+EXEC registrar_pago_membresia 
+    @cedula_cliente = '934827096',
+    @tipo_membresia = 1,          
+    @monto = 15000.00,
+    @fecha_pago = '2025-06-01',
+    @id_forma_pago = 1;
+
+SELECT * FROM pagos WHERE cedula_cliente = '934827096'
+SELECT * FROM cliente_membresias WHERE cedula = '934827096'
+DELETE FROM cliente_membresias WHERE cedula = '934827096'
+
+
+
+
+
+
+GO
 --Procedimiento almacenado para renovar la membresia de un cliente
 CREATE PROCEDURE renovar_membresia(
 	@cedula CedulaRestringida,
@@ -1267,6 +1554,7 @@ JOIN clase c ON s.id_clase = c.id_clase
 JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
 GROUP BY c.nombre, sp.fecha
 ORDER BY c.nombre, sp.fecha;
+
 
 
 
