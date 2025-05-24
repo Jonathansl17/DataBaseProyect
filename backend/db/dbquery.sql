@@ -788,20 +788,16 @@ INSERT INTO clase (id_clase, nombre, descripcion) VALUES
 
 -- Tabla cliente_clase
 INSERT INTO cliente_clase (cedula, id_clase) VALUES
-(414086906, 10),
-(800308848, 5),
-(746841900, 8),
-(767402437, 6),
-(270735008, 2),
-(931161349, 5),
-(393040211, 1),
-(290719496, 6),
-(867978083, 6),
-(681366395, 1),
-(281520804, 10),
-(261935470, 2),
-(142192323, 8),
-(569206408, 10)
+(414086906, 10), -- tiene membresía 1 (Mensual)
+(800308848, 5),  -- tiene membresía 2 (Trimestral)
+(746841900, 8),  -- tiene membresía 3 (Anual)
+(767402437, 6),  -- tiene membresía 4 (Semestral)
+(270735008, 2),  -- tiene membresía 5 (Diaria)
+(931161349, 5),  -- tiene membresía 6 (Trimestral)
+(393040211, 1),  -- tiene membresía 7 (Semestral)
+(290719496, 6),  -- tiene membresía 8 (Diaria)
+(867978083, 6);  -- tiene membresía 9 (Mensual)
+
 
 -- Tabla entrenador_clase
 INSERT INTO entrenador_clase (cedula, id_clase) VALUES
@@ -1144,7 +1140,7 @@ GO
 Procedimiento almacenado transaccional para actualizar la informacion de una persona, en este caso
 el correo y su telefono
 */
-CREATE PROCEDURE actualizar_persona(
+CREATE OR ALTER PROCEDURE actualizar_persona(
     @cedula CedulaRestringida,
     @correo CorreoRestringido,
     @telefono TelefonoRestringido
@@ -1267,7 +1263,7 @@ GO
 
 
 --Procedimiento almacenado transaccional para inscribir un cliente a una clase
-CREATE PROCEDURE asignar_clase_a_cliente (
+CREATE OR ALTER PROCEDURE asignar_clase_a_cliente (
     @cedula CedulaRestringida,
     @id_clase INT
 )
@@ -1276,7 +1272,7 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-
+        -- Validar que el cliente existe
         IF NOT EXISTS (SELECT 1 FROM cliente WHERE cedula = @cedula)
         BEGIN
             RAISERROR('Cliente no existe.', 16, 1);
@@ -1284,6 +1280,20 @@ BEGIN
             RETURN;
         END
 
+        -- Validar que el cliente tenga una membresía activa (fecha no expirada)
+        IF NOT EXISTS (
+            SELECT 1
+            FROM cliente_membresias cm
+            JOIN membresia m ON cm.id_membresia = m.id_membresia
+            WHERE cm.cedula = @cedula AND m.fecha_expiracion >= CAST(GETDATE() AS DATE)
+        )
+        BEGIN
+            RAISERROR('El cliente no tiene una membresía activa.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Validar que la clase existe
         IF NOT EXISTS (SELECT 1 FROM clase WHERE id_clase = @id_clase)
         BEGIN
             RAISERROR('Clase no existe.', 16, 1);
@@ -1291,7 +1301,7 @@ BEGIN
             RETURN;
         END
 
-        -- Verificar duplicado
+        -- Verificar que no esté duplicado
         IF EXISTS (SELECT 1 FROM cliente_clase WHERE cedula = @cedula AND id_clase = @id_clase)
         BEGIN
             RAISERROR('Cliente ya está inscrito en esta clase.', 16, 1);
@@ -1299,7 +1309,7 @@ BEGIN
             RETURN;
         END
 
-        -- Insertar
+        -- Insertar inscripción
         INSERT INTO cliente_clase (cedula, id_clase)
         VALUES (@cedula, @id_clase);
 
@@ -1465,6 +1475,109 @@ BEGIN
 END;
 GO
 
+--Procedimiento almacenado para renovar la membresia de un cliente
+CREATE OR ALTER PROCEDURE renovar_membresia(
+	@cedula CedulaRestringida,
+    @monto DECIMAL(10,2),
+    @id_forma_pago INT
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	BEGIN TRY
+		BEGIN TRANSACTION;
+
+		-- Validar existencia del cliente
+		IF NOT EXISTS (
+			SELECT 1 FROM cliente WHERE cedula = @cedula
+		)
+		BEGIN
+			RAISERROR('El cliente no existe.', 16, 1);
+			ROLLBACK TRANSACTION;
+			RETURN;
+		END
+
+		-- Validar membresía activa
+		IF NOT EXISTS (
+			SELECT 1 FROM cliente_membresias WHERE cedula = @cedula
+		)
+		BEGIN
+			RAISERROR('El cliente no tiene una membresía activa.', 16, 1);
+			ROLLBACK TRANSACTION;
+			RETURN;
+		END
+
+        -- Validar forma de pago
+        IF NOT EXISTS (
+            SELECT 1 FROM formas_de_pago WHERE id_forma_pago = @id_forma_pago
+        )
+        BEGIN
+            RAISERROR('La forma de pago no es válida.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+		-- Obtener membresía actual
+		DECLARE @id_membresia INT, @tipo TINYINT;
+		SELECT 
+			@id_membresia = cm.id_membresia,
+			@tipo = m.tipo
+		FROM cliente_membresias cm
+		JOIN membresia m ON cm.id_membresia = m.id_membresia
+		WHERE cm.cedula = @cedula;
+
+		-- Calcular nueva fecha de expiración
+		DECLARE @nueva_fecha DATE;
+		SELECT @nueva_fecha =
+			CASE @tipo
+				WHEN 1 THEN DATEADD(DAY, 30, GETDATE())
+				WHEN 2 THEN DATEADD(DAY, 90, GETDATE())
+				WHEN 3 THEN DATEADD(DAY, 365, GETDATE())
+				WHEN 4 THEN DATEADD(DAY, 180, GETDATE())
+				WHEN 5 THEN DATEADD(DAY, 1, GETDATE())
+				ELSE NULL
+			END;
+
+		IF @nueva_fecha IS NULL
+		BEGIN
+			RAISERROR('Tipo de membresía no válido para renovación.', 16, 1);
+			ROLLBACK TRANSACTION;
+			RETURN;
+		END
+
+		-- Actualizar la fecha de expiración
+		UPDATE membresia
+		SET fecha_expiracion = @nueva_fecha
+		WHERE id_membresia = @id_membresia;
+
+		-- Insertar pago asociado
+		INSERT INTO pagos (
+			fecha_pago,
+			id_membresia,
+			cedula_cliente,
+			forma_pago,
+			monto
+		)
+		VALUES (
+			GETDATE(),
+			@id_membresia,
+			@cedula,
+			@id_forma_pago,
+			@monto
+		);
+
+		COMMIT TRANSACTION;
+	END TRY
+	BEGIN CATCH
+		DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
+		IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+		RAISERROR(@error, 16, 1);
+	END CATCH
+END;
+GO
+
+
 
 --Procedimiento almacenado transaccional para obtener estadisticas del gym
 CREATE OR ALTER PROCEDURE obtener_estadisticas_acumuladas_por_fecha
@@ -1497,64 +1610,6 @@ GO
 
 
 GO
---Procedimiento almacenado para renovar la membresia de un cliente
-CREATE PROCEDURE renovar_membresia(
-	@cedula CedulaRestringida,
-	@nueva_fecha DATE
-)
-AS
-BEGIN
-	SET NOCOUNT ON;
-	BEGIN TRY
-		BEGIN TRANSACTION
-
-
-		IF NOT EXISTS(
-			SELECT 1
-			FROM cliente
-			WHERE cedula = @cedula
-		)
-		BEGIN
-			RAISERROR('La persona no existe en la base de datos',16,1)
-			ROLLBACK TRANSACTION;
-			RETURN;
-		END
-
-		--Verificar que el cliente tenga una membresia activa
-		IF NOT EXISTS(
-			SELECT 1
-			FROM cliente_membresias
-			WHERE cedula = @cedula
-		)
-		BEGIN
-			RAISERROR('La persona no tiene una membresia activa',16,1)
-			ROLLBACK TRANSACTION;
-			RETURN;
-		END
-
-
-		--Actualizar la nueva fecha de expiracion del cliente
-		UPDATE membresia
-		SET fecha_expiracion = @nueva_fecha
-		WHERE id_membresia =(
-			SELECT id_membresia
-			FROM cliente_membresias
-			WHERE cedula = @cedula
-		)
-		COMMIT TRANSACTION
-	END TRY
-	BEGIN CATCH
-
-        DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
-
-        IF XACT_STATE() != 0 
-		BEGIN
-		ROLLBACK TRANSACTION;
-		END
-
-        RAISERROR(@error, 16, 1);
-    END CATCH
-END
 
 
 

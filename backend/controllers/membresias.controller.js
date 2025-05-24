@@ -11,9 +11,9 @@ export const renovar_membresia = async (req, res) => {
         });
     }
 
-    const {cedula,nueva_fecha} = req.body;
+    const {cedula,monto,id_forma_pago} = req.body;
 
-    if (!cedula || !nueva_fecha) {
+    if (!cedula || !monto || !id_forma_pago) {
         return res.status(400).json({
             success: false,
             message: "Todos los campos son obligatorios"
@@ -24,7 +24,8 @@ export const renovar_membresia = async (req, res) => {
         await connection
             .request()
             .input("cedula", sql.Char(9), cedula)
-            .input("nueva_fecha", sql.Date, nueva_fecha)
+            .input("monto", sql.Decimal(10, 2), monto)
+            .input("id_forma_pago", sql.Int, id_forma_pago)
             .execute("renovar_membresia");
 
         res.status(200).json({
