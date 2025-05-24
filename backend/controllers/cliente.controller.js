@@ -230,6 +230,35 @@ export const vistaClientesSesion = async(req,res) =>{
 }
 
 
+export const vistaHistorialPagosClientes = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active SQL Server connection",
+        });
+    }
+
+    try {
+        const result = await connection
+            .request()
+            .query("SELECT * FROM vista_historial_pagos_clientes ORDER BY id_pago DESC");
+
+        res.status(200).json({
+            success: true,
+            data: result.recordset
+        });
+    } catch (err) {
+        console.error("Error executing vista_historial_pagos_clientes view: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
+
+
 export const rankingClientes = async (req, res) => {
     const { connection } = getConnection();
 
