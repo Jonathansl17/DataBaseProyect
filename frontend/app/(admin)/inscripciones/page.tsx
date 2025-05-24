@@ -61,7 +61,7 @@ export default function InscripcionesPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-xl mx-auto mt-10">
+    <div className="space-y-8 max-w-xl mx-10 mt-5">
       <h1 className="text-3xl font-bold tracking-tight">Inscripciones</h1>
 
       <div className="space-y-4">

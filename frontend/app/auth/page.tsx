@@ -55,7 +55,10 @@
                 Conéctate a tu instancia de SQL Server para continuar, recuerda que debes tener el servidor en ejecución y la base de datos creada
 
                 El query de creacion se encuentra en la carpeta de backend, en la ruta:
-                <code className="text-blue-500"> backend/src/db/dbquery.sql</code>
+                <code className="text-blue-500"> backend/db/dbquery.sql</code>
+                <br />
+
+                Recordar primero crear la base de datos, usarla con el comando USE fastfiness y luego ya se puede seleccionar todo el query con control+a y ejecutarlo
             </p>
             </div>
 

@@ -173,7 +173,6 @@ export default function AsistenciaPage() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center mb-4">
-              <Search className="absolute ml-2 h-4 w-4 text-muted-foreground" />
               <Input
                 className="pl-8"
                 placeholder="Buscar cliente..."
