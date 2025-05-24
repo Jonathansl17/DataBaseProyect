@@ -193,7 +193,8 @@ CREATE TABLE estados_clientes(
 CREATE TABLE cliente_membresias(
 	cedula			 CedulaRestringida	NOT NULL,
 	id_membresia	INT					NOT NULL,
-	CONSTRAINT PK_cliente_membresias PRIMARY KEY(cedula)
+	vigente			BIT					NOT NULL DEFAULT 1
+	CONSTRAINT PK_cliente_membresias PRIMARY KEY(cedula, id_membresia)
 )
 
 
@@ -936,44 +937,45 @@ GO
 
 
 --Vista de general de todos los clientes
-CREATE VIEW vista_clientes AS
+CREATE OR ALTER VIEW vista_clientes AS
 SELECT
-	dc.nombre,
-	dc.apellido1,
-	dc.apellido2,
-	dc.cedula,
-	dc.correo,
-	dc.telefono,
-	dc.fecha_registro,
-	dm.fecha_expiracion,
-	dm.tipo_membresia,
-	dc.estado_cliente
+    dc.nombre,
+    dc.apellido1,
+    dc.apellido2,
+    dc.cedula,
+    dc.correo,
+    dc.telefono,
+    dc.fecha_registro,
+    dm.fecha_expiracion,
+    dm.tipo_membresia,
+    dc.estado_cliente
 FROM
-	(
-		SELECT
-			p.nombre,
-			p.apellido1,
-			p.apellido2,
-			p.correo,
-			c.cedula,
-			tp.telefono,
-			c.fecha_registro,
-			ec.estado AS estado_cliente
-		FROM cliente c
-		JOIN persona p ON c.cedula = p.cedula
-		JOIN telefonos_personas tp ON c.cedula = tp.cedula_persona
-		JOIN estados_clientes ec ON c.estado = ec.id_estado
-	) AS dc
+    (
+        SELECT
+            p.nombre,
+            p.apellido1,
+            p.apellido2,
+            p.correo,
+            c.cedula,
+            tp.telefono,
+            c.fecha_registro,
+            ec.estado AS estado_cliente
+        FROM cliente c
+        JOIN persona p ON c.cedula = p.cedula
+        JOIN telefonos_personas tp ON c.cedula = tp.cedula_persona
+        JOIN estados_clientes ec ON c.estado = ec.id_estado
+    ) AS dc
 LEFT JOIN (
-		SELECT
-			cm.cedula,
-			me.fecha_expiracion,
-			tm.tipo AS tipo_membresia
-		FROM cliente_membresias cm
-		JOIN membresia me ON cm.id_membresia = me.id_membresia
-		JOIN tipo_membresia tm ON me.tipo = tm.id_tipo_membresia
-) AS dm
-	ON dc.cedula = dm.cedula;
+        SELECT
+            cm.cedula,
+            me.fecha_expiracion,
+            tm.tipo AS tipo_membresia
+        FROM cliente_membresias cm
+        JOIN membresia me ON cm.id_membresia = me.id_membresia
+        JOIN tipo_membresia tm ON me.tipo = tm.id_tipo_membresia
+        WHERE cm.vigente = 1
+    ) AS dm
+    ON dc.cedula = dm.cedula;
 GO
 
 
@@ -1054,6 +1056,23 @@ GO
 
 SELECT * FROM vista_clientes_sesion
 
+
+
+GO
+CREATE VIEW vista_clientes_membresia_activa
+AS
+SELECT 
+		cm.cedula,
+		m.id_membresia,
+		m.tipo,
+		m.fecha_expiracion,
+		tm.tipo AS nombre_tipo
+	FROM cliente_membresias cm
+	JOIN membresia m ON cm.id_membresia = m.id_membresia
+	JOIN tipo_membresia tm ON m.tipo = tm.id_tipo_membresia
+	WHERE cm.vigente = 1;
+GO
+SELECT * FROM vista_clientes_membresia_activa
 
 
 
@@ -1417,7 +1436,6 @@ END;
 GO
 
 
-
 GO
 --Procedimiento almacenado transaccional para registrar el pago de membresia a un cliente
 CREATE OR ALTER PROCEDURE registrar_pago_membresia (
@@ -1436,62 +1454,130 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM cliente WHERE cedula = @cedula_cliente)
         BEGIN
             RAISERROR('Cliente no existe.', 16, 1);
-            ROLLBACK TRANSACTION;
+            ROLLBACK;
             RETURN;
         END
 
         IF NOT EXISTS (SELECT 1 FROM formas_de_pago WHERE id_forma_pago = @id_forma_pago)
         BEGIN
             RAISERROR('Forma de pago no válida.', 16, 1);
-            ROLLBACK TRANSACTION;
+            ROLLBACK;
             RETURN;
         END
 
         IF NOT EXISTS (SELECT 1 FROM tipo_membresia WHERE id_tipo_membresia = @tipo_membresia)
         BEGIN
             RAISERROR('Tipo de membresía inválido.', 16, 1);
-            ROLLBACK TRANSACTION;
+            ROLLBACK;
             RETURN;
         END
 
-        -- Insertar membresía (el trigger se encarga de calcular la fecha)
-        INSERT INTO membresia (tipo) VALUES (@tipo_membresia);
+        -- Desactivar vigentes
+        UPDATE cliente_membresias
+        SET vigente = 0
+        WHERE cedula = @cedula_cliente;
 
-        -- Obtener el ID de la ultima membresía insertada, esto por que el trigger al encargarse
-		--de insertar, no permite el uso de scope identity
+        -- Insertar nueva membresia (el trigger la configura)
         DECLARE @id_membresia INT;
+        INSERT INTO membresia (tipo) VALUES (@tipo_membresia);
         SELECT TOP 1 @id_membresia = id_membresia FROM membresia ORDER BY id_membresia DESC;
 
-        -- Relacionar cliente con la membresía
-        INSERT INTO cliente_membresias (cedula, id_membresia)
-        VALUES (@cedula_cliente, @id_membresia);
+        INSERT INTO cliente_membresias (cedula, id_membresia, vigente)
+        VALUES (@cedula_cliente, @id_membresia, 1);
 
-        -- Registrar el pago
-        INSERT INTO pagos (
-            fecha_pago,
-            id_membresia,
-            cedula_cliente,
-            forma_pago,
-            monto
-        )
-        VALUES (
-            @fecha_pago,
-            @id_membresia,
-            @cedula_cliente,
-            @id_forma_pago,
-            @monto
-        );
+        INSERT INTO pagos (fecha_pago, id_membresia, cedula_cliente, forma_pago, monto)
+        VALUES (@fecha_pago, @id_membresia, @cedula_cliente, @id_forma_pago, @monto);
 
-        COMMIT TRANSACTION;
+        COMMIT;
     END TRY
     BEGIN CATCH
-        DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
-        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+       DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() != 0 
+		ROLLBACK TRANSACTION;
         RAISERROR(@err, 16, 1);
     END CATCH
 END;
 GO
 
+
+--Procedimiento almacenado transaccional para actualizar la membresia de un cliente
+CREATE OR ALTER PROCEDURE actualizar_membresia_cliente (
+    @cedula_cliente CedulaRestringida,
+    @tipo_membresia TINYINT,
+    @monto DECIMAL(10,2),
+    @fecha_pago DATE,
+    @id_forma_pago INT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Validaciones
+        IF NOT EXISTS (SELECT 1 FROM cliente WHERE cedula = @cedula_cliente)
+        BEGIN
+            RAISERROR('Cliente no existe.', 16, 1);
+            ROLLBACK;
+            RETURN;
+        END
+
+        IF NOT EXISTS (SELECT 1 FROM formas_de_pago WHERE id_forma_pago = @id_forma_pago)
+        BEGIN
+            RAISERROR('Forma de pago no válida.', 16, 1);
+            ROLLBACK;
+            RETURN;
+        END
+
+        IF NOT EXISTS (SELECT 1 FROM tipo_membresia WHERE id_tipo_membresia = @tipo_membresia)
+        BEGIN
+            RAISERROR('Tipo de membresía inválido.', 16, 1);
+            ROLLBACK;
+            RETURN;
+        END
+
+        DECLARE @id_membresia INT;
+
+        SELECT TOP 1 @id_membresia = m.id_membresia
+        FROM cliente_membresias cm
+        JOIN membresia m ON cm.id_membresia = m.id_membresia
+        WHERE cm.cedula = @cedula_cliente AND m.tipo = @tipo_membresia
+        ORDER BY m.fecha_expiracion DESC;
+
+        IF @id_membresia IS NULL
+        BEGIN
+            RAISERROR('No existe membresía previa de ese tipo para el cliente.', 16, 1);
+            ROLLBACK;
+            RETURN;
+        END
+
+        -- Actualizar vigencia
+        UPDATE cliente_membresias
+        SET vigente = CASE 
+            WHEN id_membresia = @id_membresia THEN 1 ELSE 0
+        END
+        WHERE cedula = @cedula_cliente;
+
+        -- Registrar pago
+        INSERT INTO pagos (fecha_pago, id_membresia, cedula_cliente, forma_pago, monto)
+        VALUES (@fecha_pago, @id_membresia, @cedula_cliente, @id_forma_pago, @monto);
+
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+	DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() != 0 
+		ROLLBACK TRANSACTION;
+        RAISERROR(@err, 16, 1);
+
+    END CATCH
+END;
+GO
+
+
+
+
+
+GO
 --Procedimiento almacenado para renovar la membresia de un cliente
 CREATE OR ALTER PROCEDURE renovar_membresia(
 	@cedula CedulaRestringida,

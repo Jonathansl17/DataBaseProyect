@@ -13,11 +13,13 @@ export default function RenovarMembresia() {
   const [cedula, setCedula] = useState("414086906")
   const [monto, setMonto] = useState(15000)
   const [idFormaPago, setIdFormaPago] = useState(1)
+  const [tipoMembresia, setTipoMembresia] = useState<number | null>(null)
   const [estado, setEstado] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [persona, setPersona] = useState<Persona | null>(null)
   const [tiposMembresia, setTiposMembresia] = useState<TipoMembresia[]>([])
+  const [modo, setModo] = useState<"registrar" | "actualizar" | "renovar">("registrar")
 
   const formasDePago = [
     { id: 1, nombre: "Tarjeta" },
@@ -29,9 +31,7 @@ export default function RenovarMembresia() {
     const fetchTiposMembresia = async () => {
       try {
         const response = await fetch("http://localhost:3100/consultas/tipoMembresia")
-        if (!response.ok) {
-          throw new Error("Error al obtener los tipos de membresía.")
-        }
+        if (!response.ok) throw new Error("Error al obtener los tipos de membresía.")
         const data = await response.json()
         setTiposMembresia(data.data)
       } catch (error) {
@@ -66,30 +66,66 @@ export default function RenovarMembresia() {
     }
   }
 
-  const renovar = async () => {
+  const enviar = async () => {
     setLoading(true)
     setEstado(null)
     setError(null)
 
+    const fecha_pago = new Date().toISOString().split("T")[0]
+    let url = ""
+    let method = "POST"
+    let body: any = {}
+
+    if (modo === "registrar") {
+      if (!tipoMembresia) {
+        setError("Debe seleccionar un tipo de membresía.")
+        setLoading(false)
+        return
+      }
+      url = "http://localhost:3100/membresias/registrarPagoMembresia"
+      method = "POST"
+      body = {
+        cedula_cliente: cedula,
+        tipo_membresia: tipoMembresia,
+        monto,
+        fecha_pago,
+        id_forma_pago: idFormaPago,
+      }
+    } else if (modo === "actualizar") {
+      if (!tipoMembresia) {
+        setError("Debe seleccionar el tipo de membresía a renovar.")
+        setLoading(false)
+        return
+      }
+      url = "http://localhost:3100/membresias/actualizarMembresia"
+      method = "PUT"
+      body = {
+        cedula_cliente: cedula,
+        tipo_membresia: tipoMembresia,
+        monto: monto,
+        fecha_pago : fecha_pago,
+        id_forma_pago: idFormaPago,
+      }
+    } else if (modo === "renovar") {
+      url = "http://localhost:3100/membresias/renovarMembresia"
+      method = "PUT"
+      body = {
+        cedula_cliente: cedula,
+        monto: monto,
+        id_forma_pago: idFormaPago,
+      }
+    }
+
     try {
-      const response = await fetch("http://localhost:3100/membresias/renovarMembresia", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          cedula,
-          monto,
-          id_forma_pago: idFormaPago,
-        }),
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
       })
 
-      if (!response.ok) {
-        throw new Error("No se pudo renovar la membresía.")
-      }
+      if (!response.ok) throw new Error("No se pudo completar la operación.")
 
-      const data = await response.json()
-      setEstado("Membresía renovada con éxito.")
+      setEstado("Operación completada correctamente.")
       setPersona(null)
     } catch (err: any) {
       setError(err.message || "Ocurrió un error inesperado.")
@@ -101,9 +137,22 @@ export default function RenovarMembresia() {
   return (
     <div className="min-h-screen px-4 py-8 bg-gray-50">
       <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-        {/* Columna izquierda */}
         <div className="bg-white p-6 rounded-lg shadow-md space-y-4">
-          <h1 className="text-2xl font-bold text-left">Renovar Membresía</h1>
+          <h1 className="text-2xl font-bold text-left">Gestión de Membresías</h1>
+
+          <div className="space-y-2">
+            <Label htmlFor="modo">Modo</Label>
+            <select
+              id="modo"
+              className="w-full border rounded px-3 py-2"
+              value={modo}
+              onChange={(e) => setModo(e.target.value as any)}
+            >
+              <option value="registrar">Registrar Nueva Membresía</option>
+              <option value="actualizar">Actualizar Membresía Existente</option>
+              <option value="renovar">Renovar Última Membresía Vigente</option>
+            </select>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="cedula">Cédula</Label>
@@ -130,6 +179,25 @@ export default function RenovarMembresia() {
             />
           </div>
 
+          {(modo === "registrar" || modo === "actualizar") && (
+            <div className="space-y-2">
+              <Label htmlFor="tipoMembresia">Tipo de Membresía</Label>
+              <select
+                id="tipoMembresia"
+                className="w-full border rounded px-3 py-2"
+                value={tipoMembresia ?? ""}
+                onChange={(e) => setTipoMembresia(Number(e.target.value))}
+              >
+                <option value="">Seleccione un tipo</option>
+                {tiposMembresia.map((tipo) => (
+                  <option key={tipo.id_tipo_membresia} value={tipo.id_tipo_membresia}>
+                    {tipo.tipo}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="formaPago">Forma de Pago</Label>
             <select
@@ -146,8 +214,8 @@ export default function RenovarMembresia() {
             </select>
           </div>
 
-          <Button onClick={renovar} disabled={!persona || loading} className="w-full">
-            {loading ? "Procesando..." : "Renovar"}
+          <Button onClick={enviar} disabled={!persona || loading} className="w-full">
+            {loading ? "Procesando..." : "Ejecutar"}
           </Button>
 
           {estado && (
@@ -165,12 +233,7 @@ export default function RenovarMembresia() {
         </div>
 
         <div className="space-y-6">
-          {persona && (
-            <ClientCard persona={persona}
-            mt={0}
-            />
-          )}
-
+          {persona && <ClientCard persona={persona} mt={0} />}
         </div>
       </div>
     </div>
