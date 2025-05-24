@@ -243,7 +243,7 @@ export const vistaHistorialPagosClientes = async (req, res) => {
     try {
         const result = await connection
             .request()
-            .query("SELECT * FROM vista_historial_pagos_clientes ORDER BY id_pago DESC");
+            .query("SELECT * FROM vista_historial_pagos_clientes ORDER BY id_pago ASC");
 
         res.status(200).json({
             success: true,

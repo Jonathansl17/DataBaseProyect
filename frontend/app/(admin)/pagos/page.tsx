@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,23 +8,33 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Filter, DollarSign } from "lucide-react"
 import Link from "next/link"
+import Pago from "@/types/pagos"
 
 export default function PagosPage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [pagos, setPagos] = useState<Pago[]>([])
 
-  // Aquí conectarías con tu API: GET /api/pagos
-  const pagos = [
-    {
-      id_pago: 1,
-      fecha_pago: "2025-05-23",
-      cedula_cliente: "414086906",
-      nombre_cliente: "Mónica Soto Campos",
-      tipo_membresia: "Mensual",
-      forma_pago: "Tarjeta",
-      monto: 15000,
-    },
-    // Más datos...
-  ]
+  useEffect(()=>{
+    const fetchPagos = async () => {
+      try {
+        const response = await fetch("http://localhost:3100/clientes/vistaHistorialPagosClientes")
+        const data = await response.json()
+        setPagos(data.data)
+      } catch (err) {
+        console.error("Error cargando pagos:", err)
+      }
+    }
+    fetchPagos()
+  }, [])
+
+  const formatDate = (iso: string) => {
+  const date = new Date(iso)
+  return date.toLocaleDateString("es-CR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+}
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-CR", {
@@ -46,52 +56,6 @@ export default function PagosPage() {
             Nuevo Pago
           </Button>
         </Link>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Hoy</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₡0</div>
-            <p className="text-xs text-muted-foreground">0 pagos registrados</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Este Mes</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₡0</div>
-            <p className="text-xs text-muted-foreground">0 pagos este mes</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Promedio</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₡0</div>
-            <p className="text-xs text-muted-foreground">Por membresía</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendientes</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">Membresías vencidas</p>
-          </CardContent>
-        </Card>
       </div>
 
       <Card>
@@ -131,17 +95,17 @@ export default function PagosPage() {
               {pagos.map((pago) => (
                 <TableRow key={pago.id_pago}>
                   <TableCell className="font-medium">{pago.id_pago}</TableCell>
-                  <TableCell>{pago.fecha_pago}</TableCell>
+                  <TableCell>{formatDate(pago.fecha_pago)}</TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{pago.nombre_cliente}</div>
-                      <div className="text-sm text-muted-foreground">{pago.cedula_cliente}</div>
+                      <div className="font-medium">{pago.nombre_completo}</div>
+                      <div className="text-sm text-muted-foreground">{pago.cedula}</div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">{pago.tipo_membresia}</Badge>
                   </TableCell>
-                  <TableCell>{pago.forma_pago}</TableCell>
+                  <TableCell>{pago.formaDePago}</TableCell>
                   <TableCell className="font-medium">{formatCurrency(pago.monto)}</TableCell>
                 </TableRow>
               ))}

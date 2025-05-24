@@ -26,7 +26,6 @@ const navigation = [
   { name: "Sesiones", href: "/sesiones", icon: Calendar },
   { name: "Inscripciones", href: "/inscripciones", icon: ClipboardList },
   { name: "Asistencia", href: "/asistencia", icon: UserPlus },
-  { name: "Membresías", href: "/membresias", icon: CreditCard },
   { name: "Pagos", href: "/pagos", icon: CreditCard },
   { name: "Máquinas", href: "/maquinas", icon: Settings },
   { name: "Reportes", href: "/reportes", icon: BarChart3 },

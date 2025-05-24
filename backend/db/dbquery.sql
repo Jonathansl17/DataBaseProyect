@@ -6,6 +6,7 @@
 --DROP DATABASE fastfitness
 
 
+
 --Regla de restriccion para la cedula, para que el formato sea exactamente 9 numeros sin signos ni letras
 CREATE RULE ReglaCedulaNumerica AS
     @cedula LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]';
@@ -607,6 +608,33 @@ END;
 GO
 
 
+/*
+Este trigger se ejecuta cada vez que se actualiza cualquier membresia, verificando si alguna membresia ya paso su fecha
+de expiracion (la fecha de hoy)
+*/
+
+CREATE OR ALTER TRIGGER trigger_estado_cliente_por_vencimiento
+ON membresia
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+
+
+    UPDATE c
+    SET c.estado = 2 --Pone el estado del cliente en inactivo
+    FROM cliente c
+    JOIN cliente_membresias cm ON c.cedula = cm.cedula
+    JOIN membresia m ON cm.id_membresia = m.id_membresia
+    WHERE 
+        cm.vigente = 1
+        AND m.fecha_expiracion < CAST(GETDATE() AS DATE) --Condicion de que ya se vencio
+        AND c.estado = 1 --Y que el cliente esta activo
+END;
+GO
+
+
 
 
 --Inserciones de prueba a todas las tablas
@@ -722,27 +750,25 @@ INSERT INTO administrador (cedula, fecha_contratacion) VALUES
 
 -- Tabla estados_clientes
 INSERT INTO estados_clientes (id_estado, estado) VALUES
-(1,'Activo'),(2,'Inactivo'),(3,'Suspendido'),
-(4,'Revisión'),(5,'Retirado'),(6,'Nuevo'),(7,'Congelado'),(8,'Bloqueado'),
-(9,'Prueba'),(10,'Otros');
+(1,'Activo'),(2,'Inactivo')
 
 -- Tabla cliente
 INSERT INTO cliente (cedula, estado, fecha_registro) VALUES
-(414086906, 2, '2025-01-01'),
-(800308848, 5, '2025-01-01'),
-(746841900, 10, '2025-01-01'),
-(767402437, 2, '2025-01-01'),
-(270735008, 6, '2025-01-01'),
-(931161349, 7, '2025-01-01'),
-(393040211, 4, '2025-01-01'),
-(290719496, 5, '2025-01-01'),
-(867978083, 2, '2025-01-01'),
-(934827096, 10, '2025-01-01'),
-(681366395, 4, '2025-01-01'),
-(281520804, 9, '2025-01-01'),
-(261935470, 2, '2025-01-01'),
-(142192323, 6, '2025-01-01'),
-(569206408, 10, '2025-01-01');
+(414086906, 1, '2025-01-01'),
+(800308848, 1, '2025-01-01'),
+(746841900, 1, '2025-01-01'),
+(767402437, 1, '2025-01-01'),
+(270735008, 1, '2025-01-01'),
+(931161349, 1, '2025-01-01'),
+(393040211, 1, '2025-01-01'),
+(290719496, 1, '2025-01-01'),
+(867978083, 1, '2025-01-01'),
+(934827096, 1, '2025-01-01'),
+(681366395, 1, '2025-01-01'),
+(281520804, 1, '2025-01-01'),
+(261935470, 1, '2025-01-01'),
+(142192323, 1, '2025-01-01'),
+(569206408, 1, '2025-01-01');
 
 
 
