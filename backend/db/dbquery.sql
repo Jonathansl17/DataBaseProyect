@@ -279,10 +279,10 @@ CREATE TABLE admin_maquina(
 
 
 --Tabla clase
-CREATE TABLE clase(
-	id_clase	INT				NOT NULL,
-	nombre		VARCHAR(50)		NOT NULL,
-	descripcion VARCHAR(200) NOT NULL DEFAULT 'Sin descripción'
+CREATE  TABLE clase(
+	id_clase	INT	IDENTITY(1,1)	NOT NULL,
+	nombre		VARCHAR(50)			NOT NULL,
+	descripcion VARCHAR(200)		NOT NULL DEFAULT 'Sin descripción'
 
 	CONSTRAINT PK_clase_id_clase PRIMARY KEY(id_clase)
 )
@@ -299,7 +299,7 @@ GO
 
 -- Tabla Grupo
 CREATE TABLE grupo (
-	numero_grupo		  TINYINT NOT NULL,
+	numero_grupo		  TINYINT IDENTITY(1,1) NOT NULL,
 	cupo_disponible		  TINYINT NOT NULL,
 	cantidad_matriculados TINYINT NOT NULL DEFAULT 0,
 	CONSTRAINT PK_grupo PRIMARY KEY (numero_grupo)
@@ -308,7 +308,7 @@ GO
 
 -- Tabla horario
 CREATE TABLE horario (
-	id_horario INT NOT NULL,
+	id_horario INT IDENTITY(1,1) NOT NULL,
 	dia VARCHAR(20) NOT NULL,
 	hora_inicio TIME NOT NULL,
 	hora_fin TIME NOT NULL,
@@ -318,7 +318,7 @@ GO
 
 -- Tabla intermedia sesion
 CREATE TABLE sesion (
-    id_sesion INT			NOT NULL,
+    id_sesion INT		IDENTITY(1,1)	NOT NULL,
     numero_grupo TINYINT	NOT NULL,
     id_horario INT			NOT NULL,
     id_clase INT			NOT NULL
@@ -1330,7 +1330,126 @@ BEGIN
 END;
 GO
 
+SELECT * FROM sesion_programada
+SELECT * FROM clase
+GO
 
+
+
+--Procedimiento almacenado transaccional para crear una clase 
+CREATE OR ALTER PROCEDURE crear_clase (
+    @nombre_clase VARCHAR(50),
+    @descripcion VARCHAR(200),
+    @cupo_disponible TINYINT,
+    @dia VARCHAR(20),
+    @hora_inicio TIME,
+    @hora_fin TIME
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Validación: hora inicio < hora fin
+        IF @hora_inicio >= @hora_fin
+        BEGIN
+            RAISERROR('La hora de inicio debe ser menor que la hora de fin.', 16, 1);
+            ROLLBACK;
+            RETURN;
+        END
+
+        -- 1. Insertar la clase y obtener ID generado automaticamente
+        INSERT INTO clase (nombre, descripcion)
+        VALUES (@nombre_clase, @descripcion);
+        DECLARE @nuevo_id_clase INT = SCOPE_IDENTITY();
+
+        -- 2. Insertar el horario y obtener ID generado
+        INSERT INTO horario (dia, hora_inicio, hora_fin)
+        VALUES (@dia, @hora_inicio, @hora_fin);
+        DECLARE @nuevo_id_horario INT = SCOPE_IDENTITY();
+
+        -- 3. Insertar el grupo y obtener ID generado
+        INSERT INTO grupo (cupo_disponible, cantidad_matriculados)
+        VALUES (@cupo_disponible, 0);
+        DECLARE @nuevo_num_grupo TINYINT = SCOPE_IDENTITY();
+
+        -- 4. Crear la sesion con todos los IDs relacionados
+        INSERT INTO sesion (numero_grupo, id_horario, id_clase)
+        VALUES (@nuevo_num_grupo, @nuevo_id_horario, @nuevo_id_clase);
+
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        RAISERROR(@err, 16, 1);
+    END CATCH
+END;
+GO
+
+
+--Procedimiento almacenado para programar una sesion de una clase, enlazando las tablas de sesion y
+--sesion programada
+CREATE OR ALTER PROCEDURE programar_sesion (
+    @id_sesion INT,
+    @fecha DATE
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Validar que la sesión exista
+        IF NOT EXISTS (SELECT 1 FROM sesion WHERE id_sesion = @id_sesion)
+        BEGIN
+            RAISERROR('La sesión especificada no existe.', 16, 1);
+            ROLLBACK;
+            RETURN;
+        END
+
+        -- Validar que la fecha no sea en el pasado
+        IF @fecha < CAST(GETDATE() AS DATE)
+        BEGIN
+            RAISERROR('No se pueden programar sesiones en el pasado.', 16, 1);
+            ROLLBACK;
+            RETURN;
+        END
+
+        -- Validar que no se haya programado ya esa sesion en esa fecha
+        IF EXISTS (
+            SELECT 1
+            FROM sesion_programada
+            WHERE id_sesion = @id_sesion AND fecha = @fecha
+        )
+        BEGIN
+            RAISERROR('Ya existe una sesion programada en esa fecha para esta sesion.', 16, 1);
+            ROLLBACK;
+            RETURN;
+        END
+
+        -- Insertar la sesión programada
+        INSERT INTO sesion_programada (id_sesion, fecha)
+        VALUES (@id_sesion, @fecha);
+
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        RAISERROR(@err, 16, 1);
+    END CATCH
+END;
+GO
+
+
+
+
+
+GO
 --Procedimiento almacenado transaccional para inscribir un cliente a una clase
 CREATE OR ALTER PROCEDURE asignar_clase_a_cliente (
     @cedula CedulaRestringida,
