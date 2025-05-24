@@ -999,31 +999,40 @@ GO
 SELECT * FROM vista_clientes_clase
 GO
 
+SELECT * FROM sesion_programada
+GO
 
 
 --Vista de sesion para ver el grupo,horario y la clase que el cliente debe asistir por medio de la tabla asistencia
-CREATE VIEW vista_clientes_sesion AS
+CREATE OR ALTER VIEW vista_clientes_sesion AS
 SELECT
     dc.cedula,
     dc.nombre_cliente,
+    ds.id_sesion_programada, 
     ds.nombre_clase,
     ds.descripcion_clase,
     ds.numero_grupo,
     ds.fecha_sesion,
     ds.dia,
     ds.hora_inicio,
-    ds.hora_fin
+    ds.hora_fin,
+    CASE 
+        WHEN ac.asistio IS NULL THEN NULL         -- aún no se ha registrado
+        WHEN ac.asistio = 1 THEN CAST(1 AS BIT)   -- asistió
+        ELSE CAST(0 AS BIT)                       -- no asistió
+    END AS asistio
 FROM 
-    (	--Subconsulta de datos de cliente
+    (
         SELECT 
             p.cedula,
             p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_cliente,
             cc.id_clase
         FROM cliente_clase cc
         JOIN persona p ON p.cedula = cc.cedula
-    ) AS dc 
+    ) AS dc
 JOIN (
     SELECT 
+        sp.id_sesion_programada, 
         s.id_clase,
         c.nombre AS nombre_clase,
         c.descripcion AS descripcion_clase,
@@ -1032,16 +1041,23 @@ JOIN (
         h.dia,
         h.hora_inicio,
         h.hora_fin
-    FROM sesion s --Subconsulta de datos de sesion 
+    FROM sesion s
     JOIN clase c ON s.id_clase = c.id_clase
     JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
     JOIN horario h ON s.id_horario = h.id_horario
 ) AS ds
-    ON dc.id_clase = ds.id_clase;
+    ON dc.id_clase = ds.id_clase
+LEFT JOIN asistencia_cliente ac
+    ON ac.cedula = dc.cedula AND ac.id_sesion_programada = ds.id_sesion_programada;
 GO
 
 
+SELECT * FROM vista_clientes_sesion
 
+
+
+
+GO
 --Procedimiento almacenado transaccional para insertar un cliente
 CREATE OR ALTER PROCEDURE insertar_cliente (
     @cedula CedulaRestringida,
@@ -1328,7 +1344,8 @@ GO
 --Procedimiento almacenado transaccional para registrar la asistencia de una clase programada
 CREATE OR ALTER PROCEDURE registrar_asistencia_cliente (
     @cedula CedulaRestringida,
-    @id_sesion_programada INT
+    @id_sesion_programada INT,
+	@asistio BIT
 )
 AS
 BEGIN
@@ -1345,7 +1362,7 @@ BEGIN
             RETURN;
         END
 
-        -- Validar existencia de la sesión programada
+        -- Validar existencia de la sesion programada
         IF NOT EXISTS (
             SELECT 1 FROM sesion_programada WHERE id_sesion_programada = @id_sesion_programada
         )
@@ -1385,8 +1402,8 @@ BEGIN
         END
 
         -- Insertar la asistencia
-        INSERT INTO asistencia_cliente (cedula, id_sesion_programada, asistio)
-        VALUES (@cedula, @id_sesion_programada, 1);
+		INSERT INTO asistencia_cliente (cedula, id_sesion_programada, asistio)
+		VALUES (@cedula, @id_sesion_programada, @asistio);;
 
         COMMIT TRANSACTION;
     END TRY
@@ -1440,7 +1457,7 @@ BEGIN
         -- Insertar membresía (el trigger se encarga de calcular la fecha)
         INSERT INTO membresia (tipo) VALUES (@tipo_membresia);
 
-        -- Obtener el ID de la última membresía insertada, esto por que el trigger al encargarse
+        -- Obtener el ID de la ultima membresía insertada, esto por que el trigger al encargarse
 		--de insertar, no permite el uso de scope identity
         DECLARE @id_membresia INT;
         SELECT TOP 1 @id_membresia = id_membresia FROM membresia ORDER BY id_membresia DESC;
@@ -1578,7 +1595,6 @@ END;
 GO
 
 
-
 --Procedimiento almacenado transaccional para obtener estadisticas del gym
 CREATE OR ALTER PROCEDURE obtener_estadisticas_acumuladas_por_fecha
     @fecha DATE
@@ -1639,6 +1655,7 @@ WHERE
 
 
 
+
 SELECT * FROM sesion_programada
 
 --Consulta avanzada 3: Promedio de matriculados por grupo y detección de sobrecupo
@@ -1680,3 +1697,7 @@ GROUP BY c.nombre, sp.fecha
 ORDER BY c.nombre, sp.fecha;
 
 
+
+
+
+SELECT * FROM vista_clientes_sesion

@@ -51,3 +51,28 @@ export const getClases = async (req, res) => {
         });
     }
 }
+
+export const getAsistencia = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active SQL Server connection",
+        });
+    }
+
+    try {
+        const result = await connection.request().query("SELECT * FROM asistencia_cliente");
+        res.status(200).json({
+            success: true,
+            data: result.recordset
+        });
+    } catch (err) {
+        console.error("Error executing get_asistencia procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}

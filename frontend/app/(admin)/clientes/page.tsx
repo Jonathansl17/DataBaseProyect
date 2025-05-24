@@ -29,7 +29,7 @@ import {
   TableRow
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Cliente } from "@/types/clientes"
+import { Cliente } from "@/types/cliente"
 
 export default function ClientesPage() {
   const [searchTerm, setSearchTerm] = useState("")

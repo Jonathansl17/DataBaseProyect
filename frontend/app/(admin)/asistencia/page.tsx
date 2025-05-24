@@ -1,65 +1,120 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+} from "@/components/ui/card"
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select"
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, XCircle, Search } from "lucide-react"
+import { toast } from "sonner"
+
+interface ClienteSesion {
+  id_sesion_programada: number
+  cedula: string
+  nombre_cliente: string
+  nombre_clase: string
+  descripcion_clase: string
+  numero_grupo: number
+  fecha_sesion: string
+  dia: string
+  hora_inicio: string
+  hora_fin: string
+  asistio?: boolean | null
+}
 
 export default function AsistenciaPage() {
   const [selectedSesion, setSelectedSesion] = useState("")
+  const [sesionesProgramadas, setSesionesProgramadas] = useState<ClienteSesion[]>([])
   const [searchTerm, setSearchTerm] = useState("")
 
-  // Aquí conectarías con tu API: GET /api/sesiones-programadas
-  const sesionesProgramadas = [
-    {
-      id_sesion_programada: 1,
-      clase: "Zumba",
-      fecha: "2025-06-01",
-      hora: "08:00-09:00",
-      grupo: 1,
-    },
-    // Más datos...
-  ]
+  useEffect(() => {
+    const fetchSesiones = async () => {
+      try {
+        const res = await fetch("http://localhost:3100/clientes/vistaClientesSesion")
+        const data = await res.json()
 
-  // Aquí conectarías con tu API: GET /api/clientes-sesion/{id}
-  const clientesSesion = [
-    {
-      cedula: "414086906",
-      nombre: "Mónica Soto Campos",
-      asistio: null, // null = no registrado, true = asistió, false = no asistió
-    },
-    // Más datos...
-  ]
+        if (data.success && Array.isArray(data.tables[0])) {
+          const sesiones = data.tables[0].map((s: any) => ({
+            id_sesion_programada: s.id_sesion_programada,
+            cedula: s.cedula,
+            nombre_cliente: s.nombre_cliente,
+            nombre_clase: s.nombre_clase,
+            descripcion_clase: s.descripcion_clase,
+            numero_grupo: s.numero_grupo,
+            fecha_sesion: s.fecha_sesion,
+            dia: s.dia,
+            hora_inicio: s.hora_inicio,
+            hora_fin: s.hora_fin,
+            asistio: s.asistio,
+          }))
+          setSesionesProgramadas(sesiones)
+        } else {
+          throw new Error("Formato de datos inválido")
+        }
+      } catch (err) {
+        console.error("Error al cargar sesiones:", err)
+      }
+    }
 
-  const registrarAsistencia = async (cedula: string, asistio: boolean) => {
-    // Aquí conectarías con tu API: POST /api/asistencia
-    // Usando el procedimiento: registrar_asistencia_cliente
+    fetchSesiones()
+  }, [])
+
+  const registrarAsistencia = async (cedula: string, id_sesion_programada: number, asistio: boolean) => {
     try {
-      const response = await fetch("/api/asistencia", {
+      const response = await fetch("http://localhost:3100/clases/registrarAsistencia", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          cedula,
-          id_sesion_programada: selectedSesion,
-          asistio,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cedula, id_sesion_programada, asistio }),
       })
 
       if (response.ok) {
-        console.log("Asistencia registrada")
-        // Actualizar la lista
+        setSesionesProgramadas(prev =>
+          prev.map(cliente =>
+            cliente.cedula === cedula && cliente.id_sesion_programada === id_sesion_programada
+              ? { ...cliente, asistio }
+              : cliente
+          )
+        )
+        toast.success("Asistencia registrada con éxito")
+      } else {
+        const errText = await response.text()
+        toast.error(errText)
       }
     } catch (error) {
       console.error("Error al registrar asistencia:", error)
+      toast.error("Ocurrió un error inesperado al registrar la asistencia")
     }
   }
+
+  const sesionesUnicas = Array.from(
+    new Map(
+      sesionesProgramadas.map((s) => [
+        s.id_sesion_programada,
+        {
+          id: s.id_sesion_programada,
+          descripcion: `${s.nombre_clase} - ${s.fecha_sesion.slice(0, 10)} (${s.hora_inicio.slice(11, 16)} - ${s.hora_fin.slice(11, 16)}) - Grupo ${s.numero_grupo}`,
+        },
+      ])
+    ).values()
+  )
+
+  const clientesFiltrados = sesionesProgramadas.filter(
+    (c) => c.id_sesion_programada.toString() === selectedSesion &&
+      c.nombre_cliente.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const sesionActiva = sesionesProgramadas.find(
+    (s) => s.id_sesion_programada.toString() === selectedSesion
+  )
 
   return (
     <div className="space-y-6">
@@ -75,21 +130,19 @@ export default function AsistenciaPage() {
             <CardDescription>Elige la sesión para registrar asistencia</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="sesion">Sesión Programada</Label>
-              <Select value={selectedSesion} onValueChange={setSelectedSesion}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar sesión" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sesionesProgramadas.map((sesion) => (
-                    <SelectItem key={sesion.id_sesion_programada} value={sesion.id_sesion_programada.toString()}>
-                      {sesion.clase} - {sesion.fecha} ({sesion.hora}) - Grupo {sesion.grupo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Label>Sesión Programada</Label>
+            <Select value={selectedSesion} onValueChange={setSelectedSesion}>
+              <SelectTrigger className="bg-white text-black">
+                <SelectValue placeholder="Seleccionar sesión" />
+              </SelectTrigger>
+              <SelectContent className="bg-white text-black shadow-xl border border-gray-300">
+                {sesionesUnicas.map((s) => (
+                  <SelectItem key={s.id} value={s.id.toString()}>
+                    {s.descripcion}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </CardContent>
         </Card>
 
@@ -98,23 +151,12 @@ export default function AsistenciaPage() {
             <CardTitle>Información de la Sesión</CardTitle>
           </CardHeader>
           <CardContent>
-            {selectedSesion ? (
+            {sesionActiva ? (
               <div className="space-y-2">
-                <div>
-                  <strong>Clase:</strong> Zumba
-                </div>
-                <div>
-                  <strong>Fecha:</strong> 2025-06-01
-                </div>
-                <div>
-                  <strong>Horario:</strong> 08:00 - 09:00
-                </div>
-                <div>
-                  <strong>Grupo:</strong> 1
-                </div>
-                <div>
-                  <strong>Inscritos:</strong> 5 clientes
-                </div>
+                <div><strong>Clase:</strong> {sesionActiva.nombre_clase}</div>
+                <div><strong>Fecha:</strong> {sesionActiva.fecha_sesion.slice(0, 10)}</div>
+                <div><strong>Horario:</strong> {sesionActiva.hora_inicio.slice(11, 16)} - {sesionActiva.hora_fin.slice(11, 16)}</div>
+                <div><strong>Grupo:</strong> {sesionActiva.numero_grupo}</div>
               </div>
             ) : (
               <p className="text-muted-foreground">Selecciona una sesión para ver los detalles</p>
@@ -130,16 +172,14 @@ export default function AsistenciaPage() {
             <CardDescription>Marca la asistencia de cada cliente</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar cliente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
+            <div className="flex items-center mb-4">
+              <Search className="absolute ml-2 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-8"
+                placeholder="Buscar cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
 
             <Table>
@@ -152,33 +192,35 @@ export default function AsistenciaPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {clientesSesion.map((cliente) => (
-                  <TableRow key={cliente.cedula}>
-                    <TableCell className="font-medium">{cliente.cedula}</TableCell>
-                    <TableCell>{cliente.nombre}</TableCell>
+                {clientesFiltrados.map((cliente) => (
+                  <TableRow key={`${cliente.cedula}-${cliente.id_sesion_programada}`}>
+                    <TableCell>{cliente.cedula}</TableCell>
+                    <TableCell>{cliente.nombre_cliente}</TableCell>
                     <TableCell>
-                      {cliente.asistio === null && <Badge variant="outline">Pendiente</Badge>}
                       {cliente.asistio === true && <Badge variant="default">Asistió</Badge>}
                       {cliente.asistio === false && <Badge variant="destructive">No Asistió</Badge>}
+                      {cliente.asistio === null && <Badge variant="outline">Pendiente</Badge>}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex space-x-2">
                         <Button
                           size="sm"
-                          variant="outline"
-                          onClick={() => registrarAsistencia(cliente.cedula, true)}
+                          variant={cliente.asistio === true ? "default" : "outline"}
+                          className={cliente.asistio === true ? "bg-green-500 text-white" : ""}
+                          onClick={() => registrarAsistencia(cliente.cedula, cliente.id_sesion_programada, true)}
                           disabled={cliente.asistio !== null}
                         >
-                          <CheckCircle className="mr-1 h-4 w-4" />
+                          <CheckCircle className="w-4 h-4 mr-1" />
                           Asistió
                         </Button>
                         <Button
                           size="sm"
-                          variant="outline"
-                          onClick={() => registrarAsistencia(cliente.cedula, false)}
+                          variant={cliente.asistio === false ? "destructive" : "outline"}
+                          className={cliente.asistio === false ? "bg-red-500 text-white" : ""}
+                          onClick={() => registrarAsistencia(cliente.cedula, cliente.id_sesion_programada, false)}
                           disabled={cliente.asistio !== null}
                         >
-                          <XCircle className="mr-1 h-4 w-4" />
+                          <XCircle className="w-4 h-4 mr-1" />
                           No Asistió
                         </Button>
                       </div>
