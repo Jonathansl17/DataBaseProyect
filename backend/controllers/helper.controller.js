@@ -1,3 +1,4 @@
+import sql from "mssql";
 import { getConnection } from "../config/conectionStore.js";
 
 
@@ -101,3 +102,49 @@ export const getTipoMembresia = async (req, res) => {
         });
     }
 }
+
+
+export const getCliente = async (req, res) => {
+    const { connection } = getConnection();
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active SQL Server connection",
+        });
+    }
+
+    const { cedula } = req.params;
+
+    if (!cedula || String(cedula).length !== 9) {
+        return res.status(400).json({
+            success: false,
+            message: "Cedula query parameter must be exactly 9 characters",
+        });
+    }
+
+    try {
+        const result = await connection
+            .request()
+            .input("cedula", sql.VarChar(9), cedula.trim())
+            .query("SELECT * FROM vista_clientes WHERE cedula = @cedula");
+
+        if (result.recordset.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: `No se encontró un cliente con cédula ${cedula}`
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: result.recordset[0]
+        });
+
+    } catch (err) {
+        console.error("Error executing get_persona query: ", err);
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+};

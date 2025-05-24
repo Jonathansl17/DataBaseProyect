@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { CheckCircle } from "lucide-react"
 import { TipoMembresia } from "@/types/tipoMembresia"
+import { Persona } from "@/types/persona"
+import ClientCard from "../inscripciones/clientCard"
 
 export default function RenovarMembresia() {
   const [cedula, setCedula] = useState("414086906")
@@ -14,7 +16,14 @@ export default function RenovarMembresia() {
   const [estado, setEstado] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [persona, setPersona] = useState<Persona | null>(null)
   const [tiposMembresia, setTiposMembresia] = useState<TipoMembresia[]>([])
+
+  const formasDePago = [
+    { id: 1, nombre: "Tarjeta" },
+    { id: 2, nombre: "Simpe" },
+    { id: 3, nombre: "Efectivo" },
+  ]
 
   useEffect(() => {
     const fetchTiposMembresia = async () => {
@@ -32,6 +41,31 @@ export default function RenovarMembresia() {
     fetchTiposMembresia()
   }, [])
 
+  const buscarPersona = async () => {
+    if (cedula.trim().length !== 9) {
+      setError("La cédula debe tener exactamente 9 dígitos.")
+      setPersona(null)
+      return
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3100/consultas/cliente/${cedula.trim()}`)
+      const data = await response.json()
+      if (data.success) {
+        setPersona(data.data)
+        setError(null)
+        setEstado(null)
+      } else {
+        setPersona(null)
+        setError(`No se encontró ningún cliente con la cédula ${cedula}`)
+      }
+    } catch (err) {
+      console.error("Error al buscar cliente:", err)
+      setPersona(null)
+      setError("Ocurrió un error al buscar el cliente.")
+    }
+  }
+
   const renovar = async () => {
     setLoading(true)
     setEstado(null)
@@ -46,16 +80,17 @@ export default function RenovarMembresia() {
         body: JSON.stringify({
           cedula,
           monto,
-          id_forma_pago: idFormaPago
+          id_forma_pago: idFormaPago,
         }),
       })
 
       if (!response.ok) {
-        throw new Error("El cliente no tiene una membresía activa.")
+        throw new Error("No se pudo renovar la membresía.")
       }
 
       const data = await response.json()
       setEstado("Membresía renovada con éxito.")
+      setPersona(null)
     } catch (err: any) {
       setError(err.message || "Ocurrió un error inesperado.")
     } finally {
@@ -66,19 +101,22 @@ export default function RenovarMembresia() {
   return (
     <div className="min-h-screen px-4 py-8 bg-gray-50">
       <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-
+        {/* Columna izquierda */}
         <div className="bg-white p-6 rounded-lg shadow-md space-y-4">
           <h1 className="text-2xl font-bold text-left">Renovar Membresía</h1>
 
           <div className="space-y-2">
             <Label htmlFor="cedula">Cédula</Label>
-            <Input
-              id="cedula"
-              type="text"
-              value={cedula}
-              onChange={(e) => setCedula(e.target.value)}
-              placeholder="Ej: 414086906"
-            />
+            <div className="flex gap-2">
+              <Input
+                id="cedula"
+                type="text"
+                value={cedula}
+                onChange={(e) => setCedula(e.target.value)}
+                placeholder="Ej: 414086906"
+              />
+              <Button onClick={buscarPersona}>Buscar</Button>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -93,21 +131,22 @@ export default function RenovarMembresia() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="formaPago">Forma de Pago (ID)</Label>
-            <Input
+            <Label htmlFor="formaPago">Forma de Pago</Label>
+            <select
               id="formaPago"
-              type="number"
+              className="w-full border rounded px-3 py-2"
               value={idFormaPago}
               onChange={(e) => setIdFormaPago(Number(e.target.value))}
-              placeholder="Ej: 1"
-            />
+            >
+              {formasDePago.map((forma) => (
+                <option key={forma.id} value={forma.id}>
+                  {forma.nombre}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <Button
-            onClick={renovar}
-            disabled={loading}
-            className="w-full"
-          >
+          <Button onClick={renovar} disabled={!persona || loading} className="w-full">
             {loading ? "Procesando..." : "Renovar"}
           </Button>
 
@@ -125,15 +164,13 @@ export default function RenovarMembresia() {
           )}
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Tipos de Membresía</h2>
-          <ul className="space-y-2">
-            {tiposMembresia.map((tipo) => (
-              <li key={tipo.id_tipo_membresia} className="flex justify-between border-b pb-1">
-                <span>{tipo.tipo}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="space-y-6">
+          {persona && (
+            <ClientCard persona={persona}
+            mt={0}
+            />
+          )}
+
         </div>
       </div>
     </div>

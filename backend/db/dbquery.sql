@@ -1699,5 +1699,4 @@ ORDER BY c.nombre, sp.fecha;
 
 
 
-
 SELECT * FROM vista_clientes_sesion
