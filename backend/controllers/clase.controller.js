@@ -2,6 +2,80 @@ import sql from 'mssql';
 import { getConnection } from "../config/conectionStore.js";
 
 
+
+
+export const crearClase = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(500).json({
+        success: false,
+        message: "No hay conexión activa con SQL Server.",
+        });
+    }
+
+    const {
+        nombre_clase,
+        descripcion = "Sin descripción",
+        cupo_disponible,
+        dia,
+        hora_inicio,
+        hora_fin,
+    } = req.body;
+
+
+    if (!nombre_clase || !cupo_disponible || !dia || !hora_inicio || !hora_fin) {
+        return res.status(400).json({
+        success: false,
+        message: "Todos los campos son obligatorios.",
+        });
+    }
+
+    const parseTimeToDate = (horaStr) => {
+        try {
+        const [h, m, s = "00"] = horaStr.split(":");
+        return new Date(1970, 0, 1, parseInt(h), parseInt(m), parseInt(s));
+        } catch (e) {
+        return null;
+        }
+    };
+
+    const horaInicioDate = parseTimeToDate(hora_inicio);
+    const horaFinDate = parseTimeToDate(hora_fin);
+
+    if (!horaInicioDate || !horaFinDate || horaInicioDate >= horaFinDate) {
+        return res.status(400).json({
+        success: false,
+        message: "Hora de inicio inválida o mayor/igual que hora de fin.",
+        });
+    }
+
+    try {
+        await connection
+        .request()
+        .input("nombre_clase", sql.VarChar(50), nombre_clase)
+        .input("descripcion", sql.VarChar(200), descripcion)
+        .input("cupo_disponible", sql.TinyInt, cupo_disponible)
+        .input("dia", sql.VarChar(20), dia)
+        .input("hora_inicio", sql.Time, horaInicioDate)
+        .input("hora_fin", sql.Time, horaFinDate)
+        .execute("crear_clase");
+
+        return res.status(200).json({
+        success: true,
+        message: "Clase creada correctamente.",
+        });
+    } catch (error) {
+        console.error("Error al ejecutar el procedimiento crear_clase:", error);
+        return res.status(500).json({
+        success: false,
+        message: "Error interno al crear la clase.",
+        error: error.message,
+        });
+    }
+};
+
+
 export const asignarClase = async (req, res) => {
     const { connection } = getConnection();
 

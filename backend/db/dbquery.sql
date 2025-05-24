@@ -806,24 +806,30 @@ INSERT INTO cliente_membresias (cedula, id_membresia) VALUES
 
 
 -- Tabla clase
-INSERT INTO clase (id_clase, nombre, descripcion) VALUES
-(1,'Zumba','Ejercicio de baile'),(2,'Spinning','Bicicleta'),
-(3,'Yoga','Estiramiento'),(4,'Crossfit','Alta intensidad'),
-(5,'Pilates','Cuerpo y mente'),(6,'Boxeo','De contacto'),
-(7,'HIIT','Intervalos'),(8,'Funcional','Movimientos útiles'),
-(9,'Stretching','Flexibilidad'),(10,'TRX','Con suspensión');
+INSERT INTO clase (nombre, descripcion) VALUES
+('Zumba','Ejercicio de baile'),
+('Spinning','Bicicleta'),
+('Yoga','Estiramiento'),
+('Crossfit','Alta intensidad'),
+('Pilates','Cuerpo y mente'),
+('Boxeo','De contacto'),
+('HIIT','Intervalos'),
+('Funcional','Movimientos útiles'),
+('Stretching','Flexibilidad'),
+('TRX','Con suspensión');
+
 
 -- Tabla cliente_clase
 INSERT INTO cliente_clase (cedula, id_clase) VALUES
-(414086906, 10), -- tiene membresía 1 (Mensual)
-(800308848, 5),  -- tiene membresía 2 (Trimestral)
-(746841900, 8),  -- tiene membresía 3 (Anual)
-(767402437, 6),  -- tiene membresía 4 (Semestral)
-(270735008, 2),  -- tiene membresía 5 (Diaria)
-(931161349, 5),  -- tiene membresía 6 (Trimestral)
-(393040211, 1),  -- tiene membresía 7 (Semestral)
-(290719496, 6),  -- tiene membresía 8 (Diaria)
-(867978083, 6);  -- tiene membresía 9 (Mensual)
+(414086906, 10), 
+(800308848, 5),  
+(746841900, 8),  
+(767402437, 6), 
+(270735008, 2),  
+(931161349, 5),  
+(393040211, 1), 
+(290719496, 6), 
+(867978083, 6);  
 
 
 -- Tabla entrenador_clase
@@ -833,6 +839,7 @@ INSERT INTO entrenador_clase (cedula, id_clase) VALUES
 (866266009, 3),
 (758085848, 3),
 (920327174, 10);
+
 
 
 -- Tabla estados_maquinas
@@ -859,31 +866,38 @@ INSERT INTO admin_maquina (cedula, id_maquina, ultima_revision, cant_maquinas) V
 
 
 -- Tabla grupo
-INSERT INTO grupo (numero_grupo, cupo_disponible, cantidad_matriculados) VALUES
-(1,10,5),(2,15,12),(3,20,18),(4,8,7),(5,25,20),
-(6,12,9),(7,16,15),(8,22,21),(9,10,10),(10,30,30);
+INSERT INTO grupo (cupo_disponible, cantidad_matriculados) VALUES
+(10,5), (15,12), (20,18), (8,7), (25,20),
+(12,9), (16,15), (22,21), (10,10), (30,30);
 
 -- Tabla horario
-INSERT INTO horario (id_horario, dia, hora_inicio, hora_fin) VALUES
-(1,'Lunes','08:00','09:00'),(2,'Martes','09:00','10:00'),
-(3,'Miércoles','10:00','11:00'),(4,'Jueves','11:00','12:00'),
-(5,'Viernes','12:00','13:00'),(6,'Sábado','13:00','14:00'),
-(7,'Domingo','14:00','15:00'),(8,'Lunes','15:00','16:00'),
-(9,'Martes','16:00','17:00'),(10,'Miércoles','17:00','18:00');
+INSERT INTO horario (dia, hora_inicio, hora_fin) VALUES
+('Lunes','08:00','09:00'),
+('Martes','09:00','10:00'),
+('Miércoles','10:00','11:00'),
+('Jueves','11:00','12:00'),
+('Viernes','12:00','13:00'),
+('Sábado','13:00','14:00'),
+('Domingo','14:00','15:00'),
+('Lunes','15:00','16:00'),
+('Martes','16:00','17:00'),
+('Miércoles','17:00','18:00');
+
 
 
 -- Tabla sesion
-INSERT INTO sesion (id_sesion, numero_grupo, id_horario, id_clase) VALUES
-(1, 1, 1, 1),
-(2, 2, 2, 2),
-(3, 3, 3, 3),
-(4, 4, 4, 4),
-(5, 5, 5, 5),
-(6, 6, 6, 6),
-(7, 7, 7, 7),
-(8, 8, 8, 8),
-(9, 9, 9, 9),
-(10, 10, 10, 10);
+INSERT INTO sesion (numero_grupo, id_horario, id_clase) VALUES
+(1, 1, 1),
+(2, 2, 2),
+(3, 3, 3),
+(4, 4, 4),
+(5, 5, 5),
+(6, 6, 6),
+(7, 7, 7),
+(8, 8, 8),
+(9, 9, 9),
+(10, 10, 10);
+
 
 
 
@@ -899,6 +913,7 @@ INSERT INTO sesion_programada (id_sesion, fecha) VALUES
 (8, '2025-06-08'),
 (9, '2025-06-09'),
 (10, '2025-06-10');
+
 
 
 
@@ -924,15 +939,15 @@ INSERT INTO formas_de_pago(id_forma_pago, formaDePago)VALUES
 
 
 INSERT INTO pagos (fecha_pago, id_membresia, cedula_cliente, forma_pago, monto) VALUES 
-('2025-05-23', 1, 414086906, 1, 15000), -- Mensual
-('2025-05-23', 2, 800308848, 2, 40000), -- Trimestral
-('2025-05-23', 3, 746841900, 3, 120000), -- Anual
-('2025-05-23', 4, 767402437, 1, 80000), -- Semestral
-('2025-05-23', 5, 270735008, 2, 5000), -- Diaria
-('2025-05-23', 6, 931161349, 3, 35000), -- Trimestral
-('2025-05-23', 7, 393040211, 1, 80000), -- Semestral
-('2025-05-23', 8, 290719496, 2, 5000), -- Diaria
-('2025-05-23', 9, 867978083, 1, 15000); -- Mensual
+('2025-05-23', 1, 414086906, 1, 15000),
+('2025-05-23', 2, 800308848, 2, 40000), 
+('2025-05-23', 3, 746841900, 3, 120000),
+('2025-05-23', 4, 767402437, 1, 80000), 
+('2025-05-23', 5, 270735008, 2, 5000), 
+('2025-05-23', 6, 931161349, 3, 35000), 
+('2025-05-23', 7, 393040211, 1, 80000), 
+('2025-05-23', 8, 290719496, 2, 5000), 
+('2025-05-23', 9, 867978083, 1, 15000); 
 
 SELECT * FROM pagos
 
@@ -1335,7 +1350,8 @@ SELECT * FROM clase
 GO
 
 
-
+SELECT * FROM clase
+GO
 --Procedimiento almacenado transaccional para crear una clase 
 CREATE OR ALTER PROCEDURE crear_clase (
     @nombre_clase VARCHAR(50),
@@ -1388,6 +1404,9 @@ BEGIN
     END CATCH
 END;
 GO
+
+
+SELECT * FROM clase
 
 
 --Procedimiento almacenado para programar una sesion de una clase, enlazando las tablas de sesion y

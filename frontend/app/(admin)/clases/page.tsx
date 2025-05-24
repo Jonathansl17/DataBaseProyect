@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import {
   Card,
@@ -17,6 +18,8 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 import { Search, Users } from "lucide-react"
 
 interface ClienteClase {
@@ -66,7 +69,14 @@ export default function ClientesPorClasePage() {
             Consulta de todas las inscripciones de clientes a clases
           </p>
         </div>
+        <Link href="/clases/nuevo">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Nueva clase
+          </Button>
+        </Link>
       </div>
+
 
       <Card>
         <CardHeader>
