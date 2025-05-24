@@ -9,3 +9,11 @@ export interface Cliente {
   tipo_membresia: string | null
   estado_cliente: string
 }
+
+
+export interface MembresiasProximasAVencer {
+  cedula: string
+  nombre_completo: string
+  fecha_expiracion: string
+  dias_restantes: number
+}

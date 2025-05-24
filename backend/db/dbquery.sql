@@ -1558,16 +1558,19 @@ JOIN persona p ON cc.cedula = p.cedula
 GROUP BY p.cedula, p.nombre, p.apellido1, p.apellido2;
 
 
---Consulta avanzada 2: Clientes que tienen membresia vencida
+--Consulta avanzada 2: Clientes que tienen membresia proxima a vencer
 SELECT 
     p.cedula,
     p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_completo,
     m.fecha_expiracion,
-    DATEDIFF(DAY, m.fecha_expiracion, GETDATE()) AS dias_vencida
+    DATEDIFF(DAY, GETDATE(), m.fecha_expiracion) AS dias_restantes
 FROM cliente_membresias cm
 JOIN membresia m ON cm.id_membresia = m.id_membresia
 JOIN persona p ON cm.cedula = p.cedula
-WHERE m.fecha_expiracion < GETDATE();
+WHERE 
+    m.fecha_expiracion >= CAST(GETDATE() AS DATE)
+    AND m.fecha_expiracion < DATEADD(DAY, 7, CAST(GETDATE() AS DATE));
+
 
 
 

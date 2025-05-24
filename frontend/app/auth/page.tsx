@@ -42,7 +42,7 @@
         }
         } catch (error) {
         console.error("Error connecting:", error);
-        setMessage("❌ Error conectando al servidor");
+        setMessage("Error conectando al servidor");
         }
     };
 

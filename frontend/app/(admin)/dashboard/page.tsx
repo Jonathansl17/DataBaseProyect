@@ -23,7 +23,7 @@ import { datosEstadisticas } from "@/types/estadisticas"
 
 export default function Dashboard() {
   const [datos, setDatos] = useState<datosEstadisticas | null>(null)
-  const [fecha, setFecha] = useState<string>(() => new Date().toISOString().split("T")[0])
+  const [fecha, setFecha] = useState<string>("2025-05-23")
   const [loading, setLoading] = useState(false)
 
   
@@ -31,7 +31,7 @@ export default function Dashboard() {
   const fetchEstadisticas = async (fechaEnvio: string) => {
     try {
       setLoading(true)
-      const fechaParam = `'${fechaEnvio}'` // Comillas simples como requiere el backend
+      const fechaParam = `'${fechaEnvio}'`
       const url = `http://localhost:3100/estadisticas/obtenerEstadisticasPorFecha?fecha=${encodeURIComponent(fechaParam)}`
 
       const response = await fetch(url)
@@ -171,9 +171,9 @@ export default function Dashboard() {
               <div className="font-medium">Ranking de Clientes</div>
               <div className="text-sm text-muted-foreground">Por número de clases inscritas</div>
             </Link>
-            <Link href="/reportes/membresias-vencidas" className="block p-3 rounded-lg border hover:bg-accent transition-colors">
-              <div className="font-medium">Membresías Vencidas</div>
-              <div className="text-sm text-muted-foreground">Clientes con membresías expiradas</div>
+            <Link href="/reportes/proximasAVencer" className="block p-3 rounded-lg border hover:bg-accent transition-colors">
+              <div className="font-medium">Membresías Próximas a Vencer</div>
+              <div className="text-sm text-muted-foreground">Clientes con membresías próximas a vencer</div>
             </Link>
             <Link href="/reportes/grupos-estado" className="block p-3 rounded-lg border hover:bg-accent transition-colors">
               <div className="font-medium">Estado de Grupos</div>

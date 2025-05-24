@@ -15,8 +15,8 @@ export default function ReportesPage() {
       title: "Membresías Vencidas",
       description: "Clientes con membresías expiradas",
       icon: Users,
-      href: "/reportes/membresias-vencidas",
-      query: "Consulta avanzada 2: Clientes que tienen membresia vencida",
+      href: "/reportes/proximasAVencer",
+      query: "Consulta avanzada 2: Clientes que tienen membresia proxima a vencer",
     },
     {
       title: "Estado de Grupos",

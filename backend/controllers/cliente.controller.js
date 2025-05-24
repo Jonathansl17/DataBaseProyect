@@ -269,5 +269,42 @@ export const rankingClientes = async (req, res) => {
 
 
 
+export const clientesMembresiaProximaAVencer = async (req, res) => {
+    const { connection } = getConnection();
 
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active Sql server connection"
+        });
+    }
 
+    try {
+        const result = await connection
+            .request()
+            .query(`
+                SELECT 
+                    p.cedula,
+                    p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_completo,
+                    m.fecha_expiracion,
+                    DATEDIFF(DAY, GETDATE(), m.fecha_expiracion) AS dias_restantes
+                FROM cliente_membresias cm
+                JOIN membresia m ON cm.id_membresia = m.id_membresia
+                JOIN persona p ON cm.cedula = p.cedula
+                WHERE 
+                    m.fecha_expiracion >= CAST(GETDATE() AS DATE)
+                    AND m.fecha_expiracion < DATEADD(DAY, 7, CAST(GETDATE() AS DATE));
+            `);
+        console.log(result);
+        res.json({
+            success: true,
+            tables: [result.recordset]
+        });
+    } catch (err) {
+        console.error("Error executing consulta_avanzada2 procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
