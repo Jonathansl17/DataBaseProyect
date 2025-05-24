@@ -1055,24 +1055,32 @@ GO
 
 
 SELECT * FROM vista_clientes_sesion
-
-
-
 GO
-CREATE VIEW vista_clientes_membresia_activa
-AS
-SELECT 
-		cm.cedula,
-		m.id_membresia,
-		m.tipo,
-		m.fecha_expiracion,
-		tm.tipo AS nombre_tipo
-	FROM cliente_membresias cm
-	JOIN membresia m ON cm.id_membresia = m.id_membresia
-	JOIN tipo_membresia tm ON m.tipo = tm.id_tipo_membresia
-	WHERE cm.vigente = 1;
+
+--Vista para ver el historial de pagos de clientes
 GO
-SELECT * FROM vista_clientes_membresia_activa
+GO
+CREATE OR ALTER VIEW vista_historial_pagos_clientes AS
+SELECT
+    pa.id_pago,
+    p.cedula,
+    p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_completo,
+    tm.tipo AS tipo_membresia,
+    pa.fecha_pago,
+    pa.monto,
+    fdp.formaDePago
+FROM pagos pa
+JOIN persona p ON pa.cedula_cliente = p.cedula
+JOIN membresia m ON pa.id_membresia = m.id_membresia
+JOIN tipo_membresia tm ON m.tipo = tm.id_tipo_membresia
+JOIN formas_de_pago fdp ON pa.forma_pago = fdp.id_forma_pago;
+GO
+
+
+SELECT * 
+FROM vista_historial_pagos_clientes
+ORDER BY id_pago ASC;
+
 
 
 
@@ -1784,5 +1792,3 @@ ORDER BY c.nombre, sp.fecha;
 
 
 
-
-SELECT * FROM vista_clientes_sesion
