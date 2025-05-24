@@ -13,8 +13,8 @@ import {
   CreditCard,
   Settings,
   BarChart3,
-  MapPin,
   UserPlus,
+  ClipboardList
 } from "lucide-react"
 
 const navigation = [
@@ -24,11 +24,11 @@ const navigation = [
   { name: "Administradores", href: "/administradores", icon: Shield },
   { name: "Clases", href: "/clases", icon: Dumbbell },
   { name: "Sesiones", href: "/sesiones", icon: Calendar },
+  { name: "Inscripciones", href: "/inscripciones", icon: ClipboardList },
   { name: "Asistencia", href: "/asistencia", icon: UserPlus },
   { name: "Membresías", href: "/membresias", icon: CreditCard },
   { name: "Pagos", href: "/pagos", icon: CreditCard },
   { name: "Máquinas", href: "/maquinas", icon: Settings },
-  { name: "Ubicaciones", href: "/ubicaciones", icon: MapPin },
   { name: "Reportes", href: "/reportes", icon: BarChart3 },
 ]
 

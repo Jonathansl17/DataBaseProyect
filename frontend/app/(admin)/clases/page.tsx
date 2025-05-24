@@ -1,56 +1,86 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Search, Edit, Trash2, Users } from "lucide-react"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table"
+import { Search, Users } from "lucide-react"
 
-export default function ClasesPage() {
+interface ClienteClase {
+  nombre_cliente: string
+  apellido1: string
+  apellido2: string
+  cedula: string
+  nombre_clase: string
+  descripcion_clase: string
+}
+
+export default function ClientesPorClasePage() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [clientes, setClientes] = useState<ClienteClase[]>([])
 
-  // Aquí conectarías con tu API: GET /api/clases
-  const clases = [
-    {
-      id_clase: 1,
-      nombre: "Zumba",
-      descripcion: "Ejercicio de baile",
-      inscritos: 5,
-    },
-    {
-      id_clase: 2,
-      nombre: "Spinning",
-      descripcion: "Bicicleta",
-      inscritos: 8,
-    },
-    // Más datos...
-  ]
+  useEffect(() => {
+    const fetchClientes = async () => {
+      try {
+        const response = await fetch("http://localhost:3100/clientes/vistaClientesClase")
+        const json = await response.json()
+
+        if (json.success && Array.isArray(json.tables) && Array.isArray(json.tables[0])) {
+          setClientes(json.tables[0])
+        } else {
+          throw new Error("Formato de respuesta inesperado")
+        }
+      } catch (error) {
+        console.error("Error al cargar clientes por clase:", error)
+      }
+    }
+
+    fetchClientes()
+  }, [])
+
+  const clientesFiltrados = clientes.filter((c) =>
+    `${c.nombre_cliente} ${c.apellido1} ${c.apellido2} ${c.cedula} ${c.nombre_clase} ${c.descripcion_clase}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  )
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Clases</h1>
-          <p className="text-muted-foreground">Gestiona las clases disponibles en el gimnasio</p>
+          <h1 className="text-3xl font-bold tracking-tight">Clientes por Clase</h1>
+          <p className="text-muted-foreground">
+            Consulta de todas las inscripciones de clientes a clases
+          </p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Nueva Clase
-        </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Clases</CardTitle>
-          <CardDescription>Todas las clases disponibles en el gimnasio</CardDescription>
+          <CardTitle>Listado de Inscripciones</CardTitle>
+          <CardDescription>
+            Información detallada de cada cliente y la clase a la que está inscrito
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-2 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar clases..."
+                placeholder="Buscar por cliente, clase o cédula..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-8"
@@ -61,35 +91,26 @@ export default function ClasesPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Nombre</TableHead>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Cédula</TableHead>
+                <TableHead>Clase</TableHead>
                 <TableHead>Descripción</TableHead>
-                <TableHead>Inscritos</TableHead>
-                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {clases.map((clase) => (
-                <TableRow key={clase.id_clase}>
-                  <TableCell className="font-medium">{clase.id_clase}</TableCell>
-                  <TableCell>{clase.nombre}</TableCell>
-                  <TableCell>{clase.descripcion}</TableCell>
+              {clientesFiltrados.map((cliente, index) => (
+                <TableRow key={`${cliente.cedula}-${index}`}>
                   <TableCell>
-                    <div className="flex items-center">
-                      <Users className="mr-1 h-4 w-4" />
-                      {clase.inscritos}
+                    {cliente.nombre_cliente} {cliente.apellido1} {cliente.apellido2}
+                  </TableCell>
+                  <TableCell>{cliente.cedula}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      {cliente.nombre_clase}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  <TableCell className="text-muted-foreground">{cliente.descripcion_clase}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

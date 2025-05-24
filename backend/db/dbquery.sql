@@ -946,6 +946,7 @@ SELECT
 	dc.apellido1,
 	dc.apellido2,
 	dc.cedula,
+	dc.correo,
 	dc.telefono,
 	dc.fecha_registro,
 	dm.fecha_expiracion,
@@ -957,6 +958,7 @@ FROM
 			p.nombre,
 			p.apellido1,
 			p.apellido2,
+			p.correo,
 			c.cedula,
 			tp.telefono,
 			c.fecha_registro,
@@ -979,8 +981,7 @@ LEFT JOIN (
 GO
 
 
-SELECT * FROM vista_clientes
-GO
+
 
 --Vista de clientes con clase actual asignada
 CREATE VIEW vista_clientes_clase
@@ -1150,51 +1151,71 @@ CREATE PROCEDURE actualizar_persona(
 )
 AS
 BEGIN
-    BEGIN TRY
-        BEGIN TRANSACTION;
+	BEGIN TRY
+		BEGIN TRANSACTION;
 
-        -- Verificar existencia de la persona
-        IF NOT EXISTS (
-            SELECT 1 FROM persona WHERE cedula = @cedula
-        )
-        BEGIN
-            RAISERROR('La persona no existe.', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END
+		-- Verificar existencia de la persona
+		IF NOT EXISTS (
+			SELECT 1 FROM persona WHERE cedula = @cedula
+		)
+		BEGIN
+			RAISERROR('La persona no existe.', 16, 1);
+			ROLLBACK TRANSACTION;
+			RETURN;
+		END
 
-        -- Verificar correo no duplicado
-        IF EXISTS (
-            SELECT 1 FROM persona WHERE correo = @correo AND cedula <> @cedula
-        )
-        BEGIN
-            RAISERROR('El correo ya está registrado por otra persona.', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END
+		-- Obtener valores actuales
+		DECLARE @correo_actual VARCHAR(100)
+		DECLARE @telefono_actual VARCHAR(20)
 
-        -- Actualizar correo
-        UPDATE persona
-        SET correo = @correo
-        WHERE cedula = @cedula;
+		SELECT @correo_actual = correo FROM persona WHERE cedula = @cedula;
+		SELECT @telefono_actual = telefono FROM telefonos_personas WHERE cedula_persona = @cedula;
 
-        -- Actualizar telefono y si no existe, crearlo
-        IF EXISTS (
-            SELECT 1 FROM telefonos_personas WHERE cedula_persona = @cedula
-        )
-        BEGIN
-            UPDATE telefonos_personas
-            SET telefono = @telefono
-            WHERE cedula_persona = @cedula;
-        END
-        ELSE
-        BEGIN
-            INSERT INTO telefonos_personas (cedula_persona, telefono)
-            VALUES (@cedula, @telefono);
-        END
+		-- Validar que al menos uno cambie
+		IF (@correo_actual = @correo OR @correo IS NULL) AND (@telefono_actual = @telefono OR @telefono IS NULL)
+		BEGIN
+			RAISERROR('Debe modificar al menos el correo o el teléfono.', 16, 1);
+			ROLLBACK TRANSACTION;
+			RETURN;
+		END
 
-        COMMIT TRANSACTION;
-    END TRY
+		-- Verificar correo no duplicado
+		IF EXISTS (
+			SELECT 1 FROM persona WHERE correo = @correo AND cedula <> @cedula
+		)
+		BEGIN
+			RAISERROR('El correo ya está registrado por otra persona.', 16, 1);
+			ROLLBACK TRANSACTION;
+			RETURN;
+		END
+
+		-- Actualizar correo solo si cambia
+		IF @correo_actual <> @correo
+		BEGIN
+			UPDATE persona
+			SET correo = @correo
+			WHERE cedula = @cedula;
+		END
+
+		-- Actualizar o insertar telefono solo si cambia
+		IF @telefono_actual <> @telefono
+		BEGIN
+			IF @telefono_actual IS NOT NULL
+			BEGIN
+				UPDATE telefonos_personas
+				SET telefono = @telefono
+				WHERE cedula_persona = @cedula;
+			END
+			ELSE
+			BEGIN
+				INSERT INTO telefonos_personas (cedula_persona, telefono)
+				VALUES (@cedula, @telefono);
+			END
+		END
+
+		COMMIT TRANSACTION;
+	END TRY
+
     BEGIN CATCH
 
         DECLARE @msg NVARCHAR(4000) = ERROR_MESSAGE();
@@ -1473,17 +1494,7 @@ EXEC obtener_estadisticas_acumuladas_por_fecha '2025-05-23';
 
 GO
 
-SELECT * FROM distritos
 
-
-SELECT 
-	p.nombre,
-	c.estado
-FROM persona p
-	JOIN cliente c
-	ON p.cedula = c.cedula
-	WHERE p.cedula = '112828821'
-SELECT * FROM cliente
 
 GO
 --Procedimiento almacenado para renovar la membresia de un cliente
@@ -1573,7 +1584,7 @@ WHERE
 
 
 
-
+SELECT * FROM sesion_programada
 
 --Consulta avanzada 3: Promedio de matriculados por grupo y detección de sobrecupo
 SELECT 
@@ -1612,7 +1623,5 @@ JOIN clase c ON s.id_clase = c.id_clase
 JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
 GROUP BY c.nombre, sp.fecha
 ORDER BY c.nombre, sp.fecha;
-
-
 
 

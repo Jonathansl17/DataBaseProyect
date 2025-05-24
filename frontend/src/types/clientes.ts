@@ -2,6 +2,7 @@ export interface Cliente {
   nombre: string
   apellido1: string
   apellido2: string
+  correo: string
   cedula: string
   telefono: string
   fecha_registro: string

@@ -1,7 +1,7 @@
 import { getConnection } from "../config/conectionStore.js";
 
 
-const getDistritos = async (req, res) => {
+export const getDistritos = async (req, res) => {
     const { connection } = getConnection();
 
     if (!connection) {
@@ -26,4 +26,28 @@ const getDistritos = async (req, res) => {
     }
 }
 
-export default getDistritos
+
+export const getClases = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active SQL Server connection",
+        });
+    }
+
+    try {
+        const result = await connection.request().query("SELECT * FROM clase");
+        res.status(200).json({
+            success: true,
+            data: result.recordset
+        });
+    } catch (err) {
+        console.error("Error executing get_clases procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
