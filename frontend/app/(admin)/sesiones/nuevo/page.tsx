@@ -5,29 +5,18 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
+  Card, CardContent, CardDescription, CardHeader, CardTitle
 } from "@/components/ui/card"
 import {
-  ArrowLeft,
-  CalendarPlus,
-  CheckCircle
+  ArrowLeft, CalendarPlus, CheckCircle
 } from "lucide-react"
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem
 } from "@/components/ui/select"
 import Link from "next/link"
 
 type Sesion = {
   id_sesion: number
-  id_sesion_programada: number
   nombre_clase: string
   descripcion_clase: string
   numero_grupo: number
@@ -47,7 +36,7 @@ export default function CrearSesionPage() {
   useEffect(() => {
     const fetchSesiones = async () => {
       try {
-        const res = await fetch("http://localhost:3100/sesiones/vistaDetallesSesion")
+        const res = await fetch("http://localhost:3100/sesiones/vistaSesiones") 
         const data = await res.json()
         if (data.success && Array.isArray(data.tables?.[0])) {
           setSesiones(data.tables[0])
@@ -81,8 +70,9 @@ export default function CrearSesionPage() {
         body: JSON.stringify({ id_sesion: Number(idSesion), fecha })
       })
 
-      if (!response.ok) {
-        throw new Error("No se pudo crear la sesión.")
+      const result = await response.json()
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "No se pudo crear la sesión.")
       }
 
       setEstado("Sesión creada exitosamente.")
@@ -124,13 +114,11 @@ export default function CrearSesionPage() {
               </SelectTrigger>
               <SelectContent className="bg-white shadow-lg border border-gray-200 rounded-md">
                 {sesiones.map((s) => (
-                  <SelectItem key={s.id_sesion_programada} value={s.id_sesion.toString()}>
+                  <SelectItem key={`sesion-${s.id_sesion}`} value={s.id_sesion.toString()}>
                     {`${s.nombre_clase} | ${s.dia} ${new Date(s.hora_inicio).toLocaleTimeString("es-CR", {
-                      hour: "2-digit",
-                      minute: "2-digit"
+                      hour: "2-digit", minute: "2-digit"
                     })} - ${new Date(s.hora_fin).toLocaleTimeString("es-CR", {
-                      hour: "2-digit",
-                      minute: "2-digit"
+                      hour: "2-digit", minute: "2-digit"
                     })} | Grupo ${s.numero_grupo}`}
                   </SelectItem>
                 ))}

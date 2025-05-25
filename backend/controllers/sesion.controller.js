@@ -81,6 +81,36 @@ export const inscribirClienteASesion = async (req, res) => {
     }
 }
 
+
+export const vistaSesiones = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active Sql server connection"
+        });
+    }
+
+    try {
+        const result = await connection
+            .request()
+            .query(`SELECT * FROM vista_sesiones;`);
+        console.log(result);
+        res.json({
+            success: true,
+            tables: [result.recordset]
+        });
+    } catch (err) {
+        console.error("Error executing consulta_avanzada1 procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
+
+
 export const vistaDetallesSesion = async (req, res) => {
     const { connection } = getConnection();
 
