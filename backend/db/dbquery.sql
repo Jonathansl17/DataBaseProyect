@@ -894,16 +894,16 @@ INSERT INTO sesion_programada (id_sesion, fecha) VALUES
 
 
 -- Insertar asistencias de los clientes según la clase asignada
-INSERT INTO asistencia_cliente (id_sesion_programada, cedula, asistio) VALUES
-(1, 414086906, 1),
-(2, 800308848, 1),
-(3, 746841900, 1),
-(4, 767402437, 1),
-(5, 270735008, 1),
-(6, 931161349, 1),
-(7, 393040211, 1),
-(8, 290719496, 1),
-(9, 867978083, 1)
+INSERT INTO asistencia_cliente (id_sesion_programada, cedula) VALUES
+(1, 414086906),
+(2, 800308848),
+(3, 746841900),
+(4, 767402437),
+(5, 270735008),
+(6, 931161349),
+(7, 393040211),
+(8, 290719496),
+(9, 867978083)
 
 
 
@@ -1209,7 +1209,7 @@ BEGIN
 		END
 
 		-- Actualizar correo solo si cambia
-		IF @correo_actual <> @correo
+		IF @correo_actual != @correo
 		BEGIN
 			UPDATE persona
 			SET correo = @correo
@@ -1217,7 +1217,7 @@ BEGIN
 		END
 
 		-- Actualizar o insertar telefono solo si cambia
-		IF @telefono_actual <> @telefono
+		IF @telefono_actual != @telefono
 		BEGIN
 			IF @telefono_actual IS NOT NULL
 			BEGIN
@@ -1489,11 +1489,12 @@ END;
 
 
 GO
+
 --Procedimiento almacenado transaccional para registrar la asistencia de una clase programada
 CREATE OR ALTER PROCEDURE registrar_asistencia_cliente (
     @cedula CedulaRestringida,
     @id_sesion_programada INT,
-	@asistio BIT
+    @asistio BIT
 )
 AS
 BEGIN
@@ -1510,7 +1511,7 @@ BEGIN
             RETURN;
         END
 
-        -- Validar existencia de la sesion programada
+        -- Validar existencia de la sesión programada
         IF NOT EXISTS (
             SELECT 1 FROM sesion_programada WHERE id_sesion_programada = @id_sesion_programada
         )
@@ -1520,49 +1521,61 @@ BEGIN
             RETURN;
         END
 
-        -- Obtener el ID de la clase asociada a la sesion programada
-        DECLARE @id_clase INT;
-        SELECT @id_clase = s.id_clase
-        FROM sesion_programada sp
-        JOIN sesion s ON sp.id_sesion = s.id_sesion
-        WHERE sp.id_sesion_programada = @id_sesion_programada;
-
-        -- Validar que el cliente este inscrito en esa clase
+        -- Validar que el cliente esté inscrito en la sesión
         IF NOT EXISTS (
-            SELECT 1 FROM cliente_clase
-            WHERE cedula = @cedula AND id_clase = @id_clase
-        )
-        BEGIN
-            RAISERROR('El cliente no está inscrito en la clase de esta sesión.', 16, 1);
-            ROLLBACK TRANSACTION;
-            RETURN;
-        END
-
-        -- Verificar si ya existe una asistencia registrada
-        IF EXISTS (
-            SELECT 1 FROM asistencia_cliente
+            SELECT 1
+            FROM inscripcion_sesion_programada
             WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada
         )
         BEGIN
-            RAISERROR('Asistencia ya registrada.', 16, 1);
+            RAISERROR('El cliente no está inscrito en esta sesión programada.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END
 
-        -- Insertar la asistencia
-		INSERT INTO asistencia_cliente (cedula, id_sesion_programada, asistio)
-		VALUES (@cedula, @id_sesion_programada, @asistio);;
+        -- Si ya existe una fila pero asistio es NULL => actualizar
+        IF EXISTS (
+            SELECT 1
+            FROM asistencia_cliente
+            WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada AND asistio IS NULL
+        )
+        BEGIN
+            UPDATE asistencia_cliente
+            SET asistio = @asistio
+            WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada;
+
+            COMMIT TRANSACTION;
+            RETURN;
+        END
+
+        -- Si ya hay registro y asistio no es NULL, bloquear doble registro
+        IF EXISTS (
+            SELECT 1
+            FROM asistencia_cliente
+            WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada AND asistio IS NOT NULL
+        )
+        BEGIN
+            RAISERROR('Asistencia ya fue registrada.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Si no hay registro, insertar
+        INSERT INTO asistencia_cliente (cedula, id_sesion_programada, asistio)
+        VALUES (@cedula, @id_sesion_programada, @asistio);
 
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
         DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
         IF XACT_STATE() != 0 
-		ROLLBACK TRANSACTION;
+            ROLLBACK TRANSACTION;
         RAISERROR(@err, 16, 1);
     END CATCH
 END;
 GO
+
+
 
 
 GO
@@ -1970,3 +1983,5 @@ FROM clase c
 LEFT JOIN sesion s ON c.id_clase = s.id_clase
 LEFT JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
 GROUP BY c.id_clase, c.nombre, c.descripcion;
+
+
