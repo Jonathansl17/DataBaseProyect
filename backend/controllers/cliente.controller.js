@@ -276,10 +276,13 @@ export const rankingClientes = async (req, res) => {
                 SELECT 
                     p.cedula,
                     p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_completo,
-                    COUNT(cc.id_clase) AS total_clases,
-                    RANK() OVER (ORDER BY COUNT(cc.id_clase) DESC) AS posicion
-                FROM cliente_clase cc
-                JOIN persona p ON cc.cedula = p.cedula
+                    COUNT(DISTINCT c.id_clase) AS total_clases,
+                    RANK() OVER (ORDER BY COUNT(DISTINCT c.id_clase) DESC) AS posicion
+                FROM inscripcion_sesion_programada isp
+                JOIN sesion_programada sp ON isp.id_sesion_programada = sp.id_sesion_programada
+                JOIN sesion s ON sp.id_sesion = s.id_sesion
+                JOIN clase c ON s.id_clase = c.id_clase
+                JOIN persona p ON isp.cedula = p.cedula
                 GROUP BY p.cedula, p.nombre, p.apellido1, p.apellido2;
                 `);
         console.log(result);

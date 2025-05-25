@@ -124,7 +124,7 @@ export const vistaDetallesSesion = async (req, res) => {
     try {
         const result = await connection
             .request()
-            .query(`SELECT * FROM vista_detalles_sesion;`);
+            .query(`SELECT * FROM vista_detalles_sesion_programadas ;`);
         console.log(result);
         res.json({
             success: true,
