@@ -1,4 +1,3 @@
-import sql from 'mssql';
 import { getConnection } from "../config/conectionStore.js";
 
 export const vistaAdminMaquina = async (req, res) => {

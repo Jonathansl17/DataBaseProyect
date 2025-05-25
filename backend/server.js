@@ -9,7 +9,7 @@ import membresiaRoutes from './routes/membresia.routes.js'
 import sesionRoutes from './routes/sesion.routes.js'
 import claseRoutes from './routes/clase.routes.js'
 import estadisticaRoutes from './routes/estadistica.routes.js'
-
+import maquinaRoutes from './routes/maquina.routes.js'
 
 const app = express();
 const port = 3100;
@@ -25,7 +25,7 @@ app.use('/membresias', membresiaRoutes)
 app.use('/sesiones', sesionRoutes)
 app.use('/clases', claseRoutes)
 app.use('/estadisticas', estadisticaRoutes)
-
+app.use('/maquinas', maquinaRoutes)
 
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);

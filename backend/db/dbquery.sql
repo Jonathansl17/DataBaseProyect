@@ -1816,7 +1816,8 @@ BEGIN
 	END TRY
 	BEGIN CATCH
 		DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
-		IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+		IF XACT_STATE() != 0 
+		ROLLBACK TRANSACTION;
 		RAISERROR(@error, 16, 1);
 	END CATCH
 END;
@@ -1984,7 +1985,7 @@ LEFT JOIN sesion s ON c.id_clase = s.id_clase
 LEFT JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
 GROUP BY c.id_clase, c.nombre, c.descripcion;
 
-
+GO
 --vista general de admin maquina, para ver datos de todas las maquinas y admins
 CREATE OR ALTER VIEW vista_admin_maquina AS
 SELECT
@@ -2001,4 +2002,50 @@ FROM admin_maquina am
 JOIN maquina m ON am.id_maquina = m.id_maquina
 JOIN estados_maquinas em ON m.estado = em.id_estado
 JOIN persona p ON am.cedula = p.cedula;
+
+GO
+
+
+--Procedimiento almacenado para agregar una nueva maquina al inventario
+CREATE OR ALTER PROCEDURE agregar_maquina(
+	@estado TINYINT,
+	@tipo   VARCHAR(50),
+	@modelo VARCHAR(40),
+	@marca  VARCHAR(30)
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	BEGIN TRY
+		BEGIN TRANSACTION;
+
+		-- Validar existencia del estado
+		IF NOT EXISTS (
+			SELECT 1 FROM estados_maquinas WHERE id_estado = @estado
+		)
+		BEGIN
+			RAISERROR('El estado especificado no existe.', 16, 1);
+			ROLLBACK TRANSACTION;
+			RETURN;
+		END
+
+		-- Insertar nueva maquina
+		INSERT INTO maquina (estado, tipo, modelo, marca)
+		VALUES (@estado, @tipo, @modelo, @marca);
+
+		COMMIT TRANSACTION;
+	END TRY
+
+	BEGIN CATCH
+		DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
+
+		IF XACT_STATE() != 0
+			ROLLBACK TRANSACTION;
+
+		RAISERROR(@error, 16, 1);
+	END CATCH
+END;
+GO
+
 
