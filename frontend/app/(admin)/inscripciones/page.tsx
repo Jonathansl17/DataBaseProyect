@@ -5,35 +5,44 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { CheckCircle } from "lucide-react"
-import { Clase } from "@/types/clase"
 import { Persona } from "@/types/persona"
 import ClientCard from "./clientCard"
 import { toast } from "sonner"
+
+interface Sesion {
+  id_sesion_programada: number 
+  nombre_clase: string
+  descripcion_clase: string
+  numero_grupo: number
+  dia: string
+  hora_inicio: string
+  hora_fin: string
+}
 
 
 export default function InscripcionesPage() {
   const [cedula, setCedula] = useState("")
   const [persona, setPersona] = useState<Persona | null>(null)
-  const [clases, setClases] = useState<Clase[]>([])
-  const [claseSeleccionada, setClaseSeleccionada] = useState<number | null>(null)
+  const [sesiones, setSesiones] = useState<Sesion[]>([])
+  const [sesionSeleccionada, setSesionSeleccionada] = useState<number | null>(null)
 
   useEffect(() => {
-    const fetchClases = async () => {
+    const fetchSesiones = async () => {
       try {
-        const response = await fetch("http://localhost:3100/consultas/clases")
+        const response = await fetch("http://localhost:3100/sesiones/vistaDetallesSesion")
         const data = await response.json()
-        if (data.success) {
-          setClases(data.data)
+        if (data.success && Array.isArray(data.tables[0])) {
+          setSesiones(data.tables[0])
         } else {
-          throw new Error("No se pudieron obtener las clases.")
+          throw new Error("No se pudieron obtener las sesiones.")
         }
       } catch (error) {
-        console.error("Error al cargar clases:", error)
-        toast.error("Error al cargar clases.")
+        console.error("Error al cargar sesiones:", error)
+        toast.error("Error al cargar sesiones.")
       }
     }
 
-    fetchClases()
+    fetchSesiones()
   }, [])
 
   const buscarPersona = async () => {
@@ -69,16 +78,19 @@ export default function InscripcionesPage() {
   }
 
   const handleInscripcion = async () => {
-    if (!persona || !claseSeleccionada) {
-      toast.error("Debe seleccionar una clase y haber buscado una persona válida.")
+    if (!persona || !sesionSeleccionada) {
+      toast.error("Debe seleccionar una sesión y haber buscado una persona válida.")
       return
     }
 
     try {
-      const response = await fetch("http://localhost:3100/clases/asignarClase", {
+      const response = await fetch("http://localhost:3100/sesiones/inscribirClienteASesion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cedula: persona.cedula, id_clase: claseSeleccionada }),
+        body: JSON.stringify({
+          cedula_cliente: persona.cedula,
+          id_sesion_programada: sesionSeleccionada
+        }),
       })
 
       const result = await response.json()
@@ -86,9 +98,9 @@ export default function InscripcionesPage() {
         toast.success("✅ Inscripción exitosa")
         setCedula("")
         setPersona(null)
-        setClaseSeleccionada(null)
+        setSesionSeleccionada(null)
       } else {
-        toast.error("No se pudo completar la inscripción. Intenta nuevamente.")
+        toast.error(result.message || "No se pudo completar la inscripción.")
       }
     } catch (error) {
       console.error("Error al inscribir:", error)
@@ -98,12 +110,11 @@ export default function InscripcionesPage() {
 
   return (
     <div className="flex flex-col md:flex-row gap-6 mx-10 mt-5">
-      {/* Formulario principal */}
       <div className="flex-1 space-y-6 max-w-xl">
-        <h1 className="text-3xl font-bold tracking-tight">Inscripciones</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Inscripción a Sesiones</h1>
 
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Inscribir cliente a una clase</h2>
+          <h2 className="text-xl font-semibold">Inscribir cliente a una sesión</h2>
 
           <div className="flex items-end gap-2">
             <div className="flex-1">
@@ -122,28 +133,24 @@ export default function InscripcionesPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Clases disponibles</Label>
+            <Label>Sesiones disponibles</Label>
 
             {persona && !tieneMembresiaActiva() && (
               <p className="text-red-600 text-sm">
-                El cliente no tiene una membresía activa. No puede inscribirse en clases.
+                El cliente no tiene una membresía activa. No puede inscribirse en sesiones.
               </p>
             )}
 
             <div className="grid gap-3">
-              {clases.map((clase) => {
-                const isSelected = claseSeleccionada === clase.id_clase
-                const isDisabled = claseSeleccionada !== null && !isSelected
+              {sesiones.map((sesion, index) => {
+                const isSelected = sesionSeleccionada === index + 1
+                const isDisabled = sesionSeleccionada !== null && !isSelected
 
                 return (
                   <button
-                    key={clase.id_clase}
+                    key={index}
                     type="button"
-                    onClick={() =>
-                      isSelected
-                        ? setClaseSeleccionada(null)
-                        : setClaseSeleccionada(clase.id_clase)
-                    }
+                    onClick={() => setSesionSeleccionada(isSelected ? null : index + 1)}
                     disabled={isDisabled || !persona || !tieneMembresiaActiva()}
                     className={`relative w-full text-left px-5 py-3 rounded-lg border transition font-medium
                       ${isSelected
@@ -155,8 +162,19 @@ export default function InscripcionesPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-lg font-semibold">{clase.nombre}</div>
-                        <div className="text-sm text-muted-foreground">{clase.descripcion}</div>
+                        <div className="text-lg font-semibold">{sesion.nombre_clase}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Grupo {sesion.numero_grupo} - {sesion.dia} de{" "}
+                          {new Date(sesion.hora_inicio).toLocaleTimeString("es-CR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}{" "}
+                          a{" "}
+                          {new Date(sesion.hora_fin).toLocaleTimeString("es-CR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
                       </div>
                       {isSelected && (
                         <CheckCircle className="h-5 w-5 text-white bg-green-600 rounded-full p-0.5" />
@@ -171,7 +189,7 @@ export default function InscripcionesPage() {
           <Button
             className="w-full mt-4"
             onClick={handleInscripcion}
-            disabled={!persona || !claseSeleccionada || !tieneMembresiaActiva()}
+            disabled={!persona || !sesionSeleccionada || !tieneMembresiaActiva()}
           >
             Inscribir
           </Button>
@@ -184,7 +202,6 @@ export default function InscripcionesPage() {
           mt={32}
         />
       )}
-
     </div>
   )
 }

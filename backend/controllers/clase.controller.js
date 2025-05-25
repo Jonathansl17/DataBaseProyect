@@ -76,45 +76,6 @@ export const crearClase = async (req, res) => {
 };
 
 
-export const asignarClase = async (req, res) => {
-    const { connection } = getConnection();
-
-    if (!connection) {
-        return res.status(400).json({
-            success: false,
-            message: "No active SQL Server connection",
-        });
-    }
-
-    const { cedula, id_clase } = req.body;
-
-    if (!cedula || !id_clase) {
-        return res.status(400).json({
-            success: false,
-            message: "Todos los campos son obligatorios"
-        });
-    }
-
-    try {
-        await connection
-            .request()
-            .input("cedula", sql.Char(9), cedula)
-            .input("id_clase", sql.Int, id_clase)
-            .execute("asignar_clase_a_cliente");
-
-        res.status(200).json({
-            success: true,
-            message: "Clase asignada correctamente"
-        });
-    } catch (err) {
-        console.error("Error executing asignar_clase_a_cliente procedure: ", err);
-        res.status(400).json({
-            success: false,
-            message: err.message
-        });
-    }
-}
-
 
 
 export const registarAsistencia = async (req, res) => {
@@ -150,6 +111,35 @@ export const registarAsistencia = async (req, res) => {
         });
     } catch (err) {
         console.error("Error executing registrar_asistencia_cliente procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
+
+
+export const vistaTotalClasesPorSesion = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active SQL Server connection",
+        });
+    }
+
+    try {
+        const result = await connection
+            .request()
+            .query("SELECT * FROM vista_total_clases_por_sesion");
+
+        res.status(200).json({
+            success: true,
+            data: result.recordset
+        });
+    } catch (err) {
+        console.error("Error executing vista_total_clases_por_sesion procedure: ", err);
         res.status(400).json({
             success: false,
             message: err.message

@@ -177,7 +177,7 @@ CREATE TABLE cliente(
 CREATE TABLE asistencia_cliente (
     id_sesion_programada INT NOT NULL,
     cedula CedulaRestringida NOT NULL,
-    asistio BIT NOT NULL DEFAULT 1,
+    asistio BIT NULL DEFAULT NULL,
     CONSTRAINT PK_asistencia_cliente PRIMARY KEY (id_sesion_programada, cedula)
 );
 GO
@@ -237,16 +237,6 @@ CREATE TABLE pagos (
     monto INT							NOT NULL
 	CONSTRAINT PK_id_pago_pagos PRIMARY KEY(id_pago)
 );
-
-
-
---Tabla intermedia de cliente_clase
-CREATE TABLE cliente_clase(
-	cedula		 CedulaRestringida	NOT NULL,
-	id_clase	 INT				NOT NULL
-	
-	CONSTRAINT PK_cliente_clase PRIMARY KEY(cedula, id_clase)
-)
 
 
 -- Tabla estados de maquinas
@@ -337,6 +327,20 @@ CREATE TABLE sesion_programada (
 GO
 
 
+--Tabla de inscripciones a las sesiones programadas
+CREATE TABLE inscripcion_sesion_programada (
+  id_sesion_programada INT NOT NULL,
+  cedula CedulaRestringida NOT NULL,
+  fecha_inscripcion DATE NOT NULL DEFAULT GETDATE(),
+  PRIMARY KEY (id_sesion_programada, cedula),
+  CONSTRAINT FK_inscripcion_sesion_programada FOREIGN KEY (id_sesion_programada)
+    REFERENCES sesion_programada(id_sesion_programada)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT FK_inscripcion_sesion_cliente FOREIGN KEY (cedula)
+    REFERENCES cliente(cedula)
+    ON DELETE CASCADE ON UPDATE CASCADE
+);
+
 
 
 -- Agregar las claves foraneas despues de crear todas las tablas
@@ -399,23 +403,6 @@ ALTER TABLE membresia
 ADD CONSTRAINT FK_tipo_membresia FOREIGN KEY(tipo)
 REFERENCES tipo_membresia(id_tipo_membresia)
 GO
-
---FK: cliente_clase ->cliente
-ALTER TABLE cliente_clase
-ADD CONSTRAINT FK_cliente_clase_cliente FOREIGN KEY(cedula)
-REFERENCES cliente(cedula)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
-GO
-
--- FK: cliente_clase ->clase
-ALTER TABLE cliente_clase
-ADD CONSTRAINT FK_cliente_clase_clase FOREIGN KEY(id_clase)
-REFERENCES clase(id_clase)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
-GO
-
 
 
 
@@ -819,18 +806,6 @@ INSERT INTO clase (nombre, descripcion) VALUES
 ('TRX','Con suspensión');
 
 
--- Tabla cliente_clase
-INSERT INTO cliente_clase (cedula, id_clase) VALUES
-(414086906, 10), 
-(800308848, 5),  
-(746841900, 8),  
-(767402437, 6), 
-(270735008, 2),  
-(931161349, 5),  
-(393040211, 1), 
-(290719496, 6), 
-(867978083, 6);  
-
 
 -- Tabla entrenador_clase
 INSERT INTO entrenador_clase (cedula, id_clase) VALUES
@@ -949,9 +924,21 @@ INSERT INTO pagos (fecha_pago, id_membresia, cedula_cliente, forma_pago, monto) 
 ('2025-05-23', 8, 290719496, 2, 5000), 
 ('2025-05-23', 9, 867978083, 1, 15000); 
 
+-- Inscribir clientes a sesiones programadas ya existentes
+INSERT INTO inscripcion_sesion_programada (id_sesion_programada, cedula) VALUES
+(1, '414086906'),  
+(2, '800308848'),  
+(3, '746841900'),  
+(4, '767402437'),  
+(5, '270735008'),  
+(6, '931161349'),  
+(7, '393040211'),  
+(8, '290719496'),  
+(9, '867978083'), 
+(10, '934827096'); 
+
+
 SELECT * FROM pagos
-
-
 SELECT * FROM provincias;
 SELECT * FROM cantones;
 SELECT * FROM distritos;
@@ -966,7 +953,6 @@ SELECT * FROM tipo_membresia;
 SELECT * FROM membresia;
 SELECT * FROM cliente_membresias;
 SELECT * FROM clase;
-SELECT * FROM cliente_clase;
 SELECT * FROM entrenador_clase;
 SELECT * FROM estados_maquinas;
 SELECT * FROM maquina;
@@ -1020,86 +1006,39 @@ LEFT JOIN (
 GO
 
 
-
-
---Vista de clientes con clase actual asignada
-CREATE VIEW vista_clientes_clase
-AS
-SELECT
-	p.nombre AS nombre_cliente,
-	p.apellido1,
-	p.apellido2,
-    c.cedula,
-	cl.nombre AS nombre_clase,
-	cl.descripcion AS descripcion_clase
-FROM
-	cliente c
-	JOIN persona p ON c.cedula = p.cedula
-	JOIN cliente_clase cc ON c.cedula = cc.cedula
-	JOIN clase cl ON cc.id_clase = cl.id_clase
 GO
-
-SELECT * FROM vista_clientes_clase
-GO
-
-SELECT * FROM sesion_programada
-GO
-
-
 --Vista de sesion para ver el grupo,horario y la clase que el cliente debe asistir por medio de la tabla asistencia
-CREATE OR ALTER VIEW vista_clientes_sesion AS
+CREATE VIEW vista_clientes_sesion AS
 SELECT
-    dc.cedula,
-    dc.nombre_cliente,
-    ds.id_sesion_programada, 
-    ds.nombre_clase,
-    ds.descripcion_clase,
-    ds.numero_grupo,
-    ds.fecha_sesion,
-    ds.dia,
-    ds.hora_inicio,
-    ds.hora_fin,
+    p.cedula,
+    p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_cliente,
+    sp.id_sesion_programada,
+    c.nombre AS nombre_clase,
+    c.descripcion AS descripcion_clase,
+    g.numero_grupo,
+    sp.fecha AS fecha_sesion,
+    h.dia,
+    h.hora_inicio,
+    h.hora_fin,
     CASE 
-        WHEN ac.asistio IS NULL THEN NULL         -- aún no se ha registrado
-        WHEN ac.asistio = 1 THEN CAST(1 AS BIT)   -- asistió
-        ELSE CAST(0 AS BIT)                       -- no asistió
+        WHEN ac.asistio IS NULL THEN NULL
+        ELSE ac.asistio
     END AS asistio
-FROM 
-    (
-        SELECT 
-            p.cedula,
-            p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_cliente,
-            cc.id_clase
-        FROM cliente_clase cc
-        JOIN persona p ON p.cedula = cc.cedula
-    ) AS dc
-JOIN (
-    SELECT 
-        sp.id_sesion_programada, 
-        s.id_clase,
-        c.nombre AS nombre_clase,
-        c.descripcion AS descripcion_clase,
-        s.numero_grupo,
-        sp.fecha AS fecha_sesion,
-        h.dia,
-        h.hora_inicio,
-        h.hora_fin
-    FROM sesion s
-    JOIN clase c ON s.id_clase = c.id_clase
-    JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
-    JOIN horario h ON s.id_horario = h.id_horario
-) AS ds
-    ON dc.id_clase = ds.id_clase
-LEFT JOIN asistencia_cliente ac
-    ON ac.cedula = dc.cedula AND ac.id_sesion_programada = ds.id_sesion_programada;
+FROM inscripcion_sesion_programada isp
+JOIN cliente cli ON cli.cedula = isp.cedula
+JOIN persona p ON p.cedula = cli.cedula
+JOIN sesion_programada sp ON isp.id_sesion_programada = sp.id_sesion_programada
+JOIN sesion s ON sp.id_sesion = s.id_sesion
+JOIN clase c ON s.id_clase = c.id_clase
+JOIN grupo g ON s.numero_grupo = g.numero_grupo
+JOIN horario h ON s.id_horario = h.id_horario
+LEFT JOIN asistencia_cliente ac ON ac.cedula = isp.cedula AND ac.id_sesion_programada = sp.id_sesion_programada;
 GO
-
 
 SELECT * FROM vista_clientes_sesion
 GO
 
 --Vista para ver el historial de pagos de clientes
-GO
 GO
 CREATE OR ALTER VIEW vista_historial_pagos_clientes AS
 SELECT
@@ -1345,8 +1284,10 @@ BEGIN
 END;
 GO
 
+SELECT * FROM sesion
 SELECT * FROM sesion_programada
 SELECT * FROM clase
+
 GO
 
 
@@ -1408,10 +1349,14 @@ GO
 
 SELECT * FROM clase
 
+GO
 
+
+
+GO
 --Procedimiento almacenado para programar una sesion de una clase, enlazando las tablas de sesion y
 --sesion programada
-CREATE OR ALTER PROCEDURE programar_sesion (
+CREATE OR ALTER PROCEDURE crear_sesion_programada (
     @id_sesion INT,
     @fecha DATE
 )
@@ -1467,19 +1412,19 @@ GO
 
 
 
-
+SELECT * FROM sesion_programada
 GO
 --Procedimiento almacenado transaccional para inscribir un cliente a una clase
-CREATE OR ALTER PROCEDURE asignar_clase_a_cliente (
+CREATE OR ALTER PROCEDURE inscribir_cliente_a_sesion_programada (
     @cedula CedulaRestringida,
-    @id_clase INT
+    @id_sesion_programada INT
 )
 AS
 BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        -- Validar que el cliente existe
+        -- Validar cliente
         IF NOT EXISTS (SELECT 1 FROM cliente WHERE cedula = @cedula)
         BEGIN
             RAISERROR('Cliente no existe.', 16, 1);
@@ -1487,51 +1432,63 @@ BEGIN
             RETURN;
         END
 
-        -- Validar que el cliente tenga una membresía activa (fecha no expirada)
-        IF NOT EXISTS (
-            SELECT 1
-            FROM cliente_membresias cm
-            JOIN membresia m ON cm.id_membresia = m.id_membresia
-            WHERE cm.cedula = @cedula AND m.fecha_expiracion >= CAST(GETDATE() AS DATE)
-        )
+        -- Validar sesión programada
+        IF NOT EXISTS (SELECT 1 FROM sesion_programada WHERE id_sesion_programada = @id_sesion_programada)
         BEGIN
-            RAISERROR('El cliente no tiene una membresía activa.', 16, 1);
+            RAISERROR('Sesión programada no existe.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END
 
-        -- Validar que la clase existe
-        IF NOT EXISTS (SELECT 1 FROM clase WHERE id_clase = @id_clase)
+        -- Validar si el cliente ya se inscribió
+        IF EXISTS (SELECT 1 FROM inscripcion_sesion_programada WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada)
         BEGIN
-            RAISERROR('Clase no existe.', 16, 1);
+            RAISERROR('El cliente ya está inscrito en esta sesión.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END
 
-        -- Verificar que no esté duplicado
-        IF EXISTS (SELECT 1 FROM cliente_clase WHERE cedula = @cedula AND id_clase = @id_clase)
+        -- Validar que el grupo no esté lleno
+        DECLARE @grupo TINYINT, @cupo INT, @matriculados INT;
+        SELECT @grupo = s.numero_grupo
+        FROM sesion_programada sp
+        JOIN sesion s ON sp.id_sesion = s.id_sesion
+        WHERE sp.id_sesion_programada = @id_sesion_programada;
+
+        SELECT 
+            @cupo = cupo_disponible, 
+            @matriculados = cantidad_matriculados
+        FROM grupo
+        WHERE numero_grupo = @grupo;
+
+        IF @matriculados >= @cupo
         BEGIN
-            RAISERROR('Cliente ya está inscrito en esta clase.', 16, 1);
+            RAISERROR('El grupo ya está lleno.', 16, 1);
             ROLLBACK TRANSACTION;
             RETURN;
         END
 
-        -- Insertar inscripción
-        INSERT INTO cliente_clase (cedula, id_clase)
-        VALUES (@cedula, @id_clase);
+        -- Inscribir cliente
+        INSERT INTO inscripcion_sesion_programada (id_sesion_programada, cedula)
+        VALUES (@id_sesion_programada, @cedula);
+
+        -- Aumentar contador
+        UPDATE grupo
+        SET cantidad_matriculados = cantidad_matriculados + 1
+        WHERE numero_grupo = @grupo;
 
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
         DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
-        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        IF XACT_STATE() != 0 
+		ROLLBACK TRANSACTION;
         RAISERROR(@err, 16, 1);
     END CATCH
 END;
+
+
 GO
-
-
-
 --Procedimiento almacenado transaccional para registrar la asistencia de una clase programada
 CREATE OR ALTER PROCEDURE registrar_asistencia_cliente (
     @cedula CedulaRestringida,
@@ -1891,11 +1848,15 @@ GO
 SELECT 
     p.cedula,
     p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_completo,
-    COUNT(cc.id_clase) AS total_clases,
-    RANK() OVER (ORDER BY COUNT(cc.id_clase) DESC) AS posicion
-FROM cliente_clase cc
-JOIN persona p ON cc.cedula = p.cedula
+    COUNT(DISTINCT c.id_clase) AS total_clases,
+    RANK() OVER (ORDER BY COUNT(DISTINCT c.id_clase) DESC) AS posicion
+FROM inscripcion_sesion_programada isp
+JOIN sesion_programada sp ON isp.id_sesion_programada = sp.id_sesion_programada
+JOIN sesion s ON sp.id_sesion = s.id_sesion
+JOIN clase c ON s.id_clase = c.id_clase
+JOIN persona p ON isp.cedula = p.cedula
 GROUP BY p.cedula, p.nombre, p.apellido1, p.apellido2;
+
 
 
 --Consulta avanzada 2: Clientes que tienen membresia proxima a vencer
@@ -1956,3 +1917,56 @@ ORDER BY c.nombre, sp.fecha;
 
 
 
+GO
+--Vista para ver los detalles de las sesiones, esto para poder crear diferentes instancias de estas
+CREATE OR ALTER VIEW vista_detalles_sesion AS
+SELECT
+    sp.id_sesion_programada,
+    s.id_sesion,
+    c.nombre AS nombre_clase,
+    c.descripcion AS descripcion_clase,
+    g.numero_grupo,
+    h.dia,
+    h.hora_inicio,
+    h.hora_fin
+FROM sesion_programada sp
+JOIN sesion s ON s.id_sesion = sp.id_sesion
+JOIN clase c ON c.id_clase = s.id_clase
+JOIN grupo g ON g.numero_grupo = s.numero_grupo
+JOIN horario h ON h.id_horario = s.id_horario;
+GO
+
+SELECT * FROM vista_detalles_sesion
+
+GO
+CREATE OR ALTER VIEW vista_detalles_sesion AS
+SELECT
+    sp.id_sesion_programada,
+    c.nombre AS nombre_clase,
+    c.descripcion AS descripcion_clase,
+    g.numero_grupo,
+    h.dia,
+    h.hora_inicio,
+    h.hora_fin
+FROM sesion_programada sp
+JOIN sesion s ON s.id_sesion = sp.id_sesion
+JOIN clase c ON s.id_clase = c.id_clase
+JOIN grupo g ON s.numero_grupo = g.numero_grupo
+JOIN horario h ON s.id_horario = h.id_horario;
+
+SELECT * FROM vista_detalles_sesion
+SELECT * FROM vista_clientes_sesion
+
+GO
+
+--Vista para ver el total de sesiones creadas por clase
+CREATE OR ALTER VIEW vista_total_clases_por_sesion AS
+SELECT 
+    c.id_clase,
+    c.nombre,
+    c.descripcion,
+    COUNT(sp.id_sesion_programada) AS total_sesiones
+FROM clase c
+LEFT JOIN sesion s ON c.id_clase = s.id_clase
+LEFT JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
+GROUP BY c.id_clase, c.nombre, c.descripcion;

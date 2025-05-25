@@ -1,5 +1,8 @@
 "use client"
 
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
@@ -55,6 +58,12 @@ export default function SesionesPage() {
                 className="pl-8"
               />
             </div>
+              <Link href="/sesiones/nuevo">
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Nueva sesion
+                  </Button>
+              </Link>
           </div>
 
           <Table>

@@ -1,6 +1,9 @@
 import { Router } from "express";
 
 import {
+    crearSesion,
+    inscribirClienteASesion,
+    vistaDetallesSesion,
     cantidadSesionPorFecha,
     distribucionGeneroPorEstado,
     promedioPorGrupoYCupos
@@ -10,5 +13,8 @@ const router = Router();
 router.get('/cantidadSesionPorFecha', cantidadSesionPorFecha);
 router.get('/distribucionGeneroPorEstado', distribucionGeneroPorEstado);
 router.get('/promedioPorGrupoYCupos', promedioPorGrupoYCupos);
+router.get('/vistaDetallesSesion', vistaDetallesSesion);
+router.post('/crearSesion', crearSesion);
+router.post('/inscribirClienteASesion', inscribirClienteASesion);
 
 export default router;
