@@ -249,11 +249,11 @@ CREATE TABLE estados_maquinas(
 
 -- Tabla maquina
 CREATE TABLE maquina(
-	id_maquina	INT				NOT NULL,
-	estado		TINYINT			NOT NULL,
-	tipo		VARCHAR(50)		NOT NULL,
-	modelo		VARCHAR(40)		NOT NULL,
-	marca		VARCHAR(30)		NOT NULL,
+	id_maquina	INT	IDENTITY(1,1)	NOT NULL,
+	estado		TINYINT				NOT NULL,
+	tipo		VARCHAR(50)			NOT NULL,
+	modelo		VARCHAR(40)			NOT NULL,
+	marca		VARCHAR(30)			NOT NULL,
 	CONSTRAINT PK_maquina_id_maquina PRIMARY KEY(id_maquina)
 );
 
@@ -727,12 +727,7 @@ INSERT INTO entrenador (cedula, fecha_contratacion, tipo) VALUES
 
 -- Tabla administrador
 INSERT INTO administrador (cedula, fecha_contratacion) VALUES
-(264451244, '2025-01-01'),
-(227902729, '2025-01-01'),
-(273939798, '2025-01-01'),
-(209902497, '2025-01-01'),
-(347260670, '2025-01-01');
-
+(264451244, '2025-01-01')
 
 
 -- Tabla estados_clientes
@@ -824,20 +819,25 @@ INSERT INTO estados_maquinas (id_estado, estado) VALUES
 (8,'Reasignada'),(9,'Donada'),(10,'Descompuesta');
 
 -- Tabla maquina
-INSERT INTO maquina (id_maquina, estado, tipo, modelo, marca) VALUES
-(1,1,'Cardio','X1000','LifeFitness'),(2,2,'Fuerza','P3000','Technogym'),
-(3,3,'Elíptica','E500','Precor'),(4,4,'Caminadora','RunFast','Matrix'),
-(5,5,'Bicicleta','SpinPro','StarTrac'),(6,6,'Remo','R300','Concept2'),
-(7,7,'Escaladora','E900','BH'),(8,8,'Prensa','LegMaster','Nautilus'),
-(9,9,'Multipower','MPX','Reebok'),(10,10,'Hack','HX100','Sole');
+INSERT INTO maquina (estado, tipo, modelo, marca) VALUES
+(1,'Cardio','X1000','LifeFitness'),(2,'Fuerza','P3000','Technogym'),
+(3,'Elíptica','E500','Precor'),(4,'Caminadora','RunFast','Matrix'),
+(5,'Bicicleta','SpinPro','StarTrac'),(6,'Remo','R300','Concept2'),
+(7,'Escaladora','E900','BH'),(8,'Prensa','LegMaster','Nautilus'),
+(9,'Multipower','MPX','Reebok'),(10,'Hack','HX100','Sole');
 
 -- Tabla admin_maquina
-INSERT INTO admin_maquina (cedula, id_maquina, ultima_revision, cant_maquinas) VALUES
+INSERT INTO admin_maquina (cedula, id_maquina,ultima_revision, cant_maquinas) VALUES
 (264451244, 1, '2025-05-01', 1),
-(227902729, 2, '2025-05-01', 1),
-(273939798, 3, '2025-05-01', 1),
-(209902497, 4, '2025-05-01', 1),
-(347260670, 5, '2025-05-01', 1);
+(264451244, 2, '2025-05-01', 1),
+(264451244, 3, '2025-05-01', 1),
+(264451244, 4, '2025-05-01', 1),
+(264451244, 5, '2025-05-01', 1),
+(264451244, 6, '2025-05-01', 1),
+(264451244, 7, '2025-05-01', 1),
+(264451244, 8, '2025-05-01', 1),
+(264451244, 9, '2025-05-01', 1),
+(264451244,10, '2025-05-01', 1);
 
 
 -- Tabla grupo
@@ -1984,4 +1984,21 @@ LEFT JOIN sesion s ON c.id_clase = s.id_clase
 LEFT JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
 GROUP BY c.id_clase, c.nombre, c.descripcion;
 
+
+--vista general de admin maquina, para ver datos de todas las maquinas y admins
+CREATE OR ALTER VIEW vista_admin_maquina AS
+SELECT
+    am.cedula AS cedula_admin,
+    p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_admin,
+    m.id_maquina,
+    m.tipo,
+    m.modelo,
+    m.marca,
+    em.estado,
+    am.ultima_revision,
+    am.cant_maquinas
+FROM admin_maquina am
+JOIN maquina m ON am.id_maquina = m.id_maquina
+JOIN estados_maquinas em ON m.estado = em.id_estado
+JOIN persona p ON am.cedula = p.cedula;
 

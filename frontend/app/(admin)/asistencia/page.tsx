@@ -16,20 +16,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, XCircle, Search } from "lucide-react"
 import { toast } from "sonner"
+import ClienteSesion from "@/types/clienteSesion"
 
-interface ClienteSesion {
-  id_sesion_programada: number
-  cedula: string
-  nombre_cliente: string
-  nombre_clase: string
-  descripcion_clase: string
-  numero_grupo: number
-  fecha_sesion: string
-  dia: string
-  hora_inicio: string
-  hora_fin: string
-  asistio?: boolean | null
-}
 
 export default function AsistenciaPage() {
   const [selectedSesion, setSelectedSesion] = useState("")
