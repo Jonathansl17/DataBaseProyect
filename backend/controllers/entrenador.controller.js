@@ -87,3 +87,31 @@ export const vistaSesionesSinEntrenador = async (req, res) => {
         });
     }
 }
+
+export const vistaEntrenadorSesionesTotales = async(req,res)=>{
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(500).json({
+            success: false,
+            message: "No active SQL Server connection.",
+        });
+    }
+
+    try {
+        const result = await connection
+            .request()
+            .query("SELECT * FROM vista_entrenador_sesiones_totales ORDER BY cantidad_sesiones DESC;");
+
+        return res.status(200).json({
+            success: true,
+            data: result.recordset,
+        });
+    } catch (error) {
+        console.error("Error getting total trainer sessions:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error getting total trainer sessions.",
+        });
+    }
+}

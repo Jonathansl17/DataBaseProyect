@@ -1009,7 +1009,7 @@ JOIN grupo g ON s.numero_grupo = g.numero_grupo
 JOIN horario h ON s.id_horario = h.id_horario
 LEFT JOIN entrenador_sesion_programada esp ON esp.id_sesion_programada = sp.id_sesion_programada
 LEFT JOIN persona ent ON esp.cedula_entrenador = ent.cedula;
-
+GO
 
 SELECT * FROM vista_clientes_sesion
 GO
@@ -2127,3 +2127,30 @@ WHERE esp.id_sesion_programada IS NULL
 GO
 
 SELECT * FROM vista_sesiones_sin_entrenador
+
+
+
+SELECT 
+	p.nombre + p.apellido1 + p.apellido2 as nombreEntrenador,
+	p.cedula
+FROM persona p
+JOIN entrenador e
+ON p.cedula = p.cedula
+
+
+GO
+--Vista para ver la cantidad de sesiones totales por entrenador
+CREATE OR ALTER VIEW vista_entrenador_sesiones_totales
+AS
+SELECT
+    esp.cedula_entrenador,
+    p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombreEntrenador,
+    COUNT(*) AS cantidad_sesiones
+FROM entrenador_sesion_programada esp
+JOIN persona p 
+    ON esp.cedula_entrenador = p.cedula
+GROUP BY esp.cedula_entrenador, p.nombre, p.apellido1, p.apellido2
+GO
+SELECT * FROM vista_entrenador_sesiones_totales
+ORDER BY cantidad_sesiones DESC;
+
