@@ -209,3 +209,84 @@ export const getEstadosMaquina = async (req, res) => {
         });
     }
 }
+
+export const getMaquinas = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active SQL Server connection",
+        });
+    }
+
+    try {
+        const result = await connection.request().query("SELECT * FROM maquina");
+        res.status(200).json({
+            success: true,
+            data: result.recordset
+        });
+    } catch (err) {
+        console.error("Error executing get_maquinas query: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
+
+export const getAdmin = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active SQL Server connection",
+        });
+    }
+
+    const { cedula } = req.params;
+
+    if (!cedula || String(cedula).length !== 9) {
+        return res.status(400).json({
+            success: false,
+            message: "Cedula query parameter must be exactly 9 characters",
+        });
+    }
+
+    try {
+        const result = await connection
+            .request()
+            .input("cedula", sql.VarChar(9), cedula.trim())
+            .query(`
+                SELECT
+                    p.nombre,
+                    p.apellido1,
+                    p.apellido2,
+                    p.cedula,
+                    a.fecha_contratacion
+                FROM persona p
+                JOIN administrador a ON a.cedula = p.cedula
+                WHERE p.cedula = @cedula
+            `);
+
+        if (result.recordset.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: `Can't find admin with cedula ${cedula}`
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: result.recordset[0]
+        });
+
+    } catch (err) {
+        console.error("Error executing get_persona query: ", err);
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+}

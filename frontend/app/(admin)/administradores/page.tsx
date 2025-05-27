@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"  
+import Link from "next/link"
 import { useEffect, useState } from "react"
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
@@ -13,11 +13,13 @@ import { Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import AdminMaquina from "@/types/adminMaquina"
-
+import RevisionHistoryModal from "./revisiones/page"
 
 export default function AdminMaquinasPage() {
   const [maquinas, setMaquinas] = useState<AdminMaquina[]>([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [modalOpen, setModalOpen] = useState(false)
+  const [maquinaSeleccionada, setMaquinaSeleccionada] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchMaquinas = async () => {
@@ -50,31 +52,40 @@ export default function AdminMaquinasPage() {
       case "Operativa": return "default"
       case "Mantenimiento": return "outline"
       case "Reparación": return "outline"
-      case "Nueva": return "default"
-      case "Fuera servicio": return "outline"
-      case "Revisada": return "default"
-      case "Desuso": return "outline"
-      case "Reasignada": return "outline"
-      case "Donada": return "outline"
       case "Descompuesta": return "outline"
       default: return "outline"
     }
   }
 
+  const abrirHistorial = (id: number) => {
+    setMaquinaSeleccionada(id)
+    setModalOpen(true)
+  }
+
   return (
-      <div className="space-y-6">
-    <div className="flex justify-between items-center">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Administración de Máquinas</h1>
-        <p className="text-muted-foreground">Control del estado, revisiones y asignaciones</p>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Administración de Máquinas</h1>
+          <p className="text-muted-foreground">Control del estado, revisiones y asignaciones</p>
+        </div>
+
+        <div className="flex items-center gap-2 mt-4">
+          <Link href="/administradores/maquinas/nueva-revision">
+            <Button className="flex items-center gap-1" variant={"outline"}>
+              <Plus className="h-4 w-4" />
+              Nueva revisión
+            </Button>
+          </Link>
+
+          <Link href="/administradores/maquinas/nuevo">
+            <Button className="flex items-center gap-1" variant="outline">
+              <Plus className="h-4 w-4" />
+              Nueva máquina
+            </Button>
+          </Link>
+        </div>
       </div>
-      <Link href="/administradores/maquinas/nuevo" className="mt-4 inline-flex items-center">
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Nueva maquina
-        </Button>
-      </Link>
-    </div>
 
       <Card>
         <CardHeader>
@@ -101,6 +112,7 @@ export default function AdminMaquinasPage() {
                 <TableHead>Estado</TableHead>
                 <TableHead>Última Revisión</TableHead>
                 <TableHead>Administrador</TableHead>
+                <TableHead>Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -115,14 +127,31 @@ export default function AdminMaquinasPage() {
                       {m.estado}
                     </Badge>
                   </TableCell>
-                  <TableCell>{new Date(m.ultima_revision).toLocaleDateString()}</TableCell>
-                  <TableCell>{m.nombre_admin}</TableCell>
+                  <TableCell>
+                    {m.ultima_revision
+                      ? new Date(m.ultima_revision).toLocaleDateString()
+                      : <span className="text-muted-foreground">Sin revisión</span>}
+                  </TableCell>
+                  <TableCell>
+                    {m.nombre_admin ?? <span className="text-muted-foreground">No asignado</span>}
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="outline" size="sm" onClick={() => abrirHistorial(m.id_maquina)}>
+                      Ver revisiones
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <RevisionHistoryModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        idMaquina={maquinaSeleccionada}
+      />
     </div>
   )
 }

@@ -2096,14 +2096,17 @@ SELECT
     em.estado,
     am.ultima_revision,
     am.cant_maquinas
-FROM admin_maquina am
-JOIN maquina m ON am.id_maquina = m.id_maquina
-JOIN estados_maquinas em ON m.estado = em.id_estado
-JOIN persona p ON am.cedula = p.cedula;
-
+FROM maquina m
+LEFT JOIN admin_maquina am ON m.id_maquina = am.id_maquina
+LEFT JOIN persona p ON am.cedula = p.cedula
+JOIN estados_maquinas em ON m.estado = em.id_estado;
 GO
 
+SELECT * FROM vista_admin_maquina
 
+
+
+GO
 --Procedimiento almacenado para agregar una nueva maquina al inventario
 CREATE OR ALTER PROCEDURE agregar_maquina(
 	@estado TINYINT,
@@ -2196,6 +2199,8 @@ SELECT * FROM maquina
 SELECT * FROM estados_maquinas
 
 GO
+
+--Procedimiento almacenado transaccional para revisicion de maquinas
 CREATE OR ALTER PROCEDURE revisar_maquina(
     @id_maquina INT,
     @cedula_admin CedulaRestringida,
@@ -2207,6 +2212,7 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
+        -- Validar existencia de la máquina
         IF NOT EXISTS (
             SELECT 1 FROM maquina WHERE id_maquina = @id_maquina
         )
@@ -2215,7 +2221,7 @@ BEGIN
             ROLLBACK; RETURN;
         END
 
-
+        -- Validar existencia del estado
         IF NOT EXISTS (
             SELECT 1 FROM estados_maquinas WHERE id_estado = @nuevo_estado
         )
@@ -2224,55 +2230,70 @@ BEGIN
             ROLLBACK; RETURN;
         END
 
+        -- Validar existencia del administrador
+        IF NOT EXISTS (
+            SELECT 1 FROM administrador WHERE cedula = @cedula_admin
+        )
+        BEGIN
+            RAISERROR('El administrador no existe.', 16, 1);
+            ROLLBACK; RETURN;
+        END
 
+        -- Insertar la revisión
         INSERT INTO revision_maquina (id_maquina, cedula_admin, nuevo_estado, observacion)
         VALUES (@id_maquina, @cedula_admin, @nuevo_estado, @observacion);
 
-
+        -- Actualizar estado de la máquina
         UPDATE maquina
         SET estado = @nuevo_estado
         WHERE id_maquina = @id_maquina;
 
-
-        UPDATE admin_maquina
-        SET ultima_revision = GETDATE()
-        WHERE id_maquina = @id_maquina AND cedula = @cedula_admin;
+        -- Insertar o actualizar admin_maquina
+        IF NOT EXISTS (
+            SELECT 1 FROM admin_maquina
+            WHERE id_maquina = @id_maquina AND cedula = @cedula_admin
+        )
+        BEGIN
+            INSERT INTO admin_maquina (cedula, id_maquina, ultima_revision)
+            VALUES (@cedula_admin, @id_maquina, GETDATE());
+        END
+        ELSE
+        BEGIN
+            UPDATE admin_maquina
+            SET ultima_revision = GETDATE()
+            WHERE id_maquina = @id_maquina AND cedula = @cedula_admin;
+        END
 
         COMMIT;
     END TRY
     BEGIN CATCH
-		DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
-
-		IF XACT_STATE() != 0
-			ROLLBACK TRANSACTION;
-
-		RAISERROR(@error, 16, 1);
-	END CATCH
+        DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() != 0
+            ROLLBACK;
+        RAISERROR(@error, 16, 1);
+    END CATCH
 END;
 GO
 
+
 GO
+--Vista de revisiones de admin maquina
 CREATE OR ALTER VIEW vista_revision_maquina AS
 SELECT
     rm.id_revision,
     rm.fecha_revision,
     rm.observacion,
-    m.id_maquina,
-    m.tipo,
-    m.modelo,
-    m.marca,
+    rm.id_maquina,
     em.estado AS estado_asignado,
-    a.cedula AS cedula_admin,
     p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_admin
 FROM revision_maquina rm
-JOIN maquina m ON rm.id_maquina = m.id_maquina
 JOIN estados_maquinas em ON rm.nuevo_estado = em.id_estado
 JOIN administrador a ON rm.cedula_admin = a.cedula
 JOIN persona p ON a.cedula = p.cedula;
 GO
-
 SELECT * FROM vista_revision_maquina
-DELETE FROM revision_maquina
+GO
+
 
 EXEC revisar_maquina 1, '264451244', 1, 'Sin novedades. Máquina operativa.';
 EXEC revisar_maquina 2, '264451244', 2, 'Desgaste en bandas. Se requiere mantenimiento.';
@@ -2284,3 +2305,9 @@ EXEC revisar_maquina 2, '264451244', 1, 'Mantenimiento completado. Máquina vuel
 EXEC revisar_maquina 7, '264451244', 1, 'Instalada y funcionando correctamente.';
 EXEC revisar_maquina 8, '264451244', 3, 'Inicio de fallo eléctrico. Se requiere reparación.';
 EXEC revisar_maquina 9, '264451244', 4, 'Daño severo en sistema de tracción. Máquina descompuesta.';
+SELECT * FROM vista_revision_maquina
+SELECT * FROM vista_admin_maquina
+
+SELECT * FROM estados_maquinas
+SELECT * FROM maquina
+
