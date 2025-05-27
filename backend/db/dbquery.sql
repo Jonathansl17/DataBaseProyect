@@ -849,7 +849,7 @@ INSERT INTO admin_maquina (cedula, id_maquina,ultima_revision) VALUES
 (264451244, 9, '2025-05-01'),
 (264451244,10, '2025-05-01');
 
-
+SELECT * FROM admin_maquina
 -- Tabla grupo
 INSERT INTO grupo (cupo_disponible, cantidad_matriculados) VALUES
 (10,5), (15,12), (20,18), (8,7), (25,20),
@@ -1927,14 +1927,31 @@ BEGIN
     END
 
     SELECT
-        (SELECT COUNT(*) FROM cliente WHERE CAST(fecha_registro AS DATE) <= @fecha) AS total_clientes,
-        (SELECT COUNT(*) FROM entrenador WHERE CAST(fecha_contratacion AS DATE) <= @fecha) AS total_entrenadores,
-        (SELECT COUNT(*) FROM clase) AS total_clases,
-        (SELECT COUNT(*) FROM sesion_programada WHERE CAST(fecha AS DATE) <= @fecha) AS total_sesiones,
-        (SELECT ISNULL(SUM(monto), 0) FROM pagos WHERE CAST(fecha_pago AS DATE) <= @fecha) AS total_pagos,
-        (SELECT COUNT(*) FROM maquina) AS total_maquinas 
+        (SELECT COUNT(*) 
+         FROM cliente 
+         WHERE CAST(fecha_registro AS DATE) <= @fecha) AS total_clientes,
+
+        (SELECT COUNT(*) 
+         FROM entrenador 
+         WHERE CAST(fecha_contratacion AS DATE) <= @fecha) AS total_entrenadores,
+
+        (SELECT COUNT(*) 
+         FROM clase) AS total_clases,
+
+        -- ✅ Solo sesiones que AÚN NO han pasado (>= hoy)
+        (SELECT COUNT(*) 
+         FROM sesion_programada 
+         WHERE CAST(fecha AS DATE) >= CAST(GETDATE() AS DATE)) AS sesiones_pendientes,
+
+        (SELECT ISNULL(SUM(monto), 0) 
+         FROM pagos 
+         WHERE CAST(fecha_pago AS DATE) <= @fecha) AS total_pagos,
+
+        (SELECT COUNT(*) 
+         FROM maquina) AS total_maquinas;
 END;
 GO
+
 
 EXEC obtener_estadisticas_por_fecha '2025-05-23';
 
@@ -2300,14 +2317,79 @@ EXEC revisar_maquina 2, '264451244', 2, 'Desgaste en bandas. Se requiere manteni
 EXEC revisar_maquina 3, '264451244', 3, 'Ruidos extraños en el motor. En reparación.';
 EXEC revisar_maquina 4, '264451244', 4, 'Panel principal no responde. Considerar reemplazo.';
 EXEC revisar_maquina 5, '264451244', 1, 'Revisión rutinaria. Máquina funcional.';
-EXEC revisar_maquina 6, '264451244', 2, 'Se detectó fuga hidráulica leve. En mantenimiento.';
-EXEC revisar_maquina 2, '264451244', 1, 'Mantenimiento completado. Máquina vuelve a estado operativo.';
-EXEC revisar_maquina 7, '264451244', 1, 'Instalada y funcionando correctamente.';
-EXEC revisar_maquina 8, '264451244', 3, 'Inicio de fallo eléctrico. Se requiere reparación.';
-EXEC revisar_maquina 9, '264451244', 4, 'Daño severo en sistema de tracción. Máquina descompuesta.';
+
 SELECT * FROM vista_revision_maquina
 SELECT * FROM vista_admin_maquina
 
 SELECT * FROM estados_maquinas
 SELECT * FROM maquina
 
+GO
+
+--Cursor para verificar las maquinas con mas de 1 dia de revision
+CREATE OR ALTER PROCEDURE cursor_maquinas_vencidas
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Tabla temporal para guardar resultados
+    DECLARE @resultado TABLE (
+        id_maquina INT,
+        tipo VARCHAR(50),
+        modelo VARCHAR(40),
+        marca VARCHAR(30),
+        estado VARCHAR(20),
+        ultima_revision DATE,
+        dias_desde_ultima_revision INT
+    );
+
+    DECLARE 
+        @id_maquina INT,
+        @tipo VARCHAR(50),
+        @modelo VARCHAR(40),
+        @marca VARCHAR(30),
+        @estado VARCHAR(20),
+        @ultima_revision DATE,
+        @dias INT;
+
+    DECLARE maquinas_cur CURSOR FOR
+    SELECT 
+        m.id_maquina, m.tipo, m.modelo, m.marca, em.estado,
+        am.ultima_revision
+    FROM maquina m
+    JOIN estados_maquinas em ON m.estado = em.id_estado
+    LEFT JOIN admin_maquina am ON m.id_maquina = am.id_maquina;
+
+    OPEN maquinas_cur
+    FETCH NEXT FROM maquinas_cur INTO @id_maquina, @tipo, @modelo, @marca, @estado, @ultima_revision
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        SET @dias = CASE 
+            WHEN @ultima_revision IS NULL THEN NULL
+            ELSE DATEDIFF(DAY, @ultima_revision, GETDATE())
+        END;
+
+        IF @dias IS NULL OR @dias > 1
+        BEGIN
+            INSERT INTO @resultado (
+                id_maquina, tipo, modelo, marca, estado, ultima_revision, dias_desde_ultima_revision
+            )
+            VALUES (
+                @id_maquina, @tipo, @modelo, @marca, @estado, @ultima_revision, @dias
+            );
+        END
+
+        FETCH NEXT FROM maquinas_cur INTO @id_maquina, @tipo, @modelo, @marca, @estado, @ultima_revision
+    END
+
+    CLOSE maquinas_cur
+    DEALLOCATE maquinas_cur
+
+    -- Usamos un select para poder retornar datos al backend
+    SELECT * FROM @resultado;
+END;
+GO
+
+
+EXEC cursor_maquinas_vencidas

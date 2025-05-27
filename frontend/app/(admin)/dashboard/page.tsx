@@ -23,7 +23,7 @@ import { datosEstadisticas } from "@/types/estadisticas"
 
 export default function Dashboard() {
   const [datos, setDatos] = useState<datosEstadisticas | null>(null)
-  const [fecha, setFecha] = useState<string>("2025-05-23")
+  const [fecha, setFecha] = useState<string>(new Date().toISOString().split("T")[0]) 
   const [loading, setLoading] = useState(false)
 
   
@@ -77,16 +77,16 @@ export default function Dashboard() {
       href: "/clases",
     },
     {
-      title: "Sesiones Hoy",
-      value: datos?.total_sesiones ?? "0",
-      description: "Sesiones programadas",
+      title: "Próximas Sesiones",
+      value: datos?.sesiones_pendientes ?? "0",
+      description: "Sesiones Pendientes",
       icon: Calendar,
       href: "/sesiones",
     },
     {
-      title: "Pagos del Mes",
+      title: "Ingresos",
       value: datos ? `₡${datos.total_pagos.toLocaleString("es-CR")}` : "₡0",
-      description: "Ingresos mensuales",
+      description: "Ingresos totales",
       icon: CreditCard,
       href: "/pagos",
     },
@@ -95,7 +95,7 @@ export default function Dashboard() {
       value: datos?.total_maquinas ?? "0",
       description: "Equipos disponibles",
       icon: BarChart3,
-      href: "/maquinas",
+      href: "/administradores",
     },
   ]
 

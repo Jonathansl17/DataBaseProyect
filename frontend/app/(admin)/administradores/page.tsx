@@ -129,8 +129,8 @@ export default function AdminMaquinasPage() {
                   </TableCell>
                   <TableCell>
                     {m.ultima_revision
-                      ? new Date(m.ultima_revision).toLocaleDateString()
-                      : <span className="text-muted-foreground">Sin revisión</span>}
+                    ? new Date(m.ultima_revision).toLocaleDateString('es-CR', { timeZone: 'UTC' })
+                    : <span className="text-muted-foreground">Sin revisión</span>}
                   </TableCell>
                   <TableCell>
                     {m.nombre_admin ?? <span className="text-muted-foreground">No asignado</span>}
