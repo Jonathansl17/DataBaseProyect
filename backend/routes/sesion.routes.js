@@ -5,13 +5,13 @@ import {
     inscribirClienteASesion,
     vistaSesiones,
     vistaDetallesSesion,
-    cantidadSesionPorFecha,
+    cantidadSesionPorMes,
     distribucionGeneroPorEstado,
     promedioPorGrupoYCupos
 } from "../controllers/sesion.controller.js";
 const router = Router();
 
-router.get('/cantidadSesionPorFecha', cantidadSesionPorFecha);
+router.get('/cantidadSesionPorMes', cantidadSesionPorMes);
 router.get('/distribucionGeneroPorEstado', distribucionGeneroPorEstado);
 router.get('/promedioPorGrupoYCupos', promedioPorGrupoYCupos);
 router.get('/vistaDetallesSesion', vistaDetallesSesion);

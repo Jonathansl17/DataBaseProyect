@@ -141,7 +141,7 @@ export const vistaDetallesSesion = async (req, res) => {
 
 
 
-export const cantidadSesionPorFecha = async (req, res) => {
+export const cantidadSesionPorMes = async (req, res) => {
     const { connection } = getConnection();
 
     if (!connection) {
@@ -157,13 +157,13 @@ export const cantidadSesionPorFecha = async (req, res) => {
             .query(`
                     SELECT 
                         c.nombre AS clase,
-                        sp.fecha AS fecha_sesion,
-                        COUNT(*) AS total_sesiones_en_fecha
+                        DATENAME(MONTH, sp.fecha) + ' ' + CAST(YEAR(sp.fecha) AS VARCHAR) AS mes,
+                        COUNT(*) AS total_sesiones_en_mes
                     FROM sesion s
                     JOIN clase c ON s.id_clase = c.id_clase
                     JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
-                    GROUP BY c.nombre, sp.fecha
-                    ORDER BY c.nombre, sp.fecha;
+                    GROUP BY c.nombre, DATENAME(MONTH, sp.fecha), YEAR(sp.fecha)
+                    ORDER BY mes DESC
                 `);
         console.log(result);
         res.json({
@@ -199,7 +199,8 @@ export const distribucionGeneroPorEstado = async (req, res) => {
                         SUM(CASE WHEN g.genero = 'Masculino' THEN 1 ELSE 0 END) AS hombres,
                         SUM(CASE WHEN g.genero = 'Femenino' THEN 1 ELSE 0 END) AS mujeres,
                         COUNT(*) AS total
-                    FROM cliente c
+                    FROM inscripcion_sesion_programada ic
+                    JOIN cliente c ON ic.cedula = c.cedula
                     JOIN persona p ON c.cedula = p.cedula
                     JOIN generos g ON p.genero = g.id_genero
                     JOIN estados_clientes ec ON c.estado = ec.id_estado

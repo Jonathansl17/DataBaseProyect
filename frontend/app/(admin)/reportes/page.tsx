@@ -69,36 +69,6 @@ export default function ReportesPage() {
           )
         })}
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Vistas Disponibles</CardTitle>
-          <CardDescription>Vistas creadas en la base de datos para consultas frecuentes</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="p-4 border rounded-lg">
-              <h4 className="font-medium">vista_clientes</h4>
-              <p className="text-sm text-muted-foreground">
-                Vista general de todos los clientes con información completa
-              </p>
-              <code className="text-xs bg-muted p-1 rounded">GET /api/vistas/clientes</code>
-            </div>
-
-            <div className="p-4 border rounded-lg">
-              <h4 className="font-medium">vista_clientes_clase</h4>
-              <p className="text-sm text-muted-foreground">Clientes con su clase actual asignada</p>
-              <code className="text-xs bg-muted p-1 rounded">GET /api/vistas/clientes-clase</code>
-            </div>
-
-            <div className="p-4 border rounded-lg">
-              <h4 className="font-medium">vista_clientes_sesion</h4>
-              <p className="text-sm text-muted-foreground">Información de sesiones que debe asistir cada cliente</p>
-              <code className="text-xs bg-muted p-1 rounded">GET /api/vistas/clientes-sesion</code>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }
