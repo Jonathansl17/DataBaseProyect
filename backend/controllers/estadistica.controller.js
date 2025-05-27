@@ -16,7 +16,7 @@ export const obtenerEstadisticasPorFecha = async (req, res) => {
     if (!fecha) {
         return res.status(400).json({
             success: false,
-            message: "El campo fecha es obligatorio"
+            message: "Fecha is required",
         });
     }
 
@@ -24,7 +24,7 @@ export const obtenerEstadisticasPorFecha = async (req, res) => {
         const result = await connection
             .request()
             .input("fecha", sql.Date, fecha)
-            .execute("obtener_estadisticas_acumuladas_por_fecha");
+            .execute("obtener_estadisticas_por_fecha");
 
         res.status(200).json({
             success: true,

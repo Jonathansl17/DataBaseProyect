@@ -148,3 +148,39 @@ export const getCliente = async (req, res) => {
         });
     }
 };
+
+
+export const getEntrenadores = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active SQL Server connection",
+        });
+    }
+
+    try {
+        const result = await connection.request().query(`
+            SELECT 
+            p.nombre,
+            p.cedula,
+            p.apellido1,
+            p.apellido2,
+            e.tipo
+            FROM persona p
+            JOIN entrenador e
+            ON p.cedula = e.cedula
+            `);
+        res.status(200).json({
+            success: true,
+            data: result.recordset
+        });
+    } catch (err) {
+        console.error("Error executing get_entrenadores procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}

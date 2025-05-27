@@ -8,4 +8,5 @@ export interface Sesion {
     dia: string;
     hora_inicio: string;
     hora_fin: string;
+    entrenador_asignado: string;
 }

@@ -6,7 +6,7 @@ export const vistaAdminMaquina = async (req, res) => {
     if (!connection) {
         return res.status(500).json({
             success: false,
-            message: "No hay conexión activa con SQL Server.",
+            message: "No active SQL Server connection.",
         });
     }
 
@@ -20,10 +20,10 @@ export const vistaAdminMaquina = async (req, res) => {
             data: result.recordset,
         });
     } catch (error) {
-        console.error("Error al obtener las máquinas:", error);
+        console.error("Error getting machines:", error);
         return res.status(500).json({
             success: false,
-            message: "Error al obtener las máquinas.",
+            message: "Error getting machines.",
         });
     }
 }

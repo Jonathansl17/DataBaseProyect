@@ -77,6 +77,7 @@ export default function SesionesPage() {
                 <TableHead>Fecha</TableHead>
                 <TableHead>Hora Inicio</TableHead>
                 <TableHead>Hora Fin</TableHead>
+                <TableHead>Entrenador</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -90,6 +91,7 @@ export default function SesionesPage() {
                   <TableCell>{new Date(s.fecha_sesion).toLocaleDateString("es-CR")}</TableCell>
                   <TableCell>{new Date(s.hora_inicio).toLocaleTimeString("es-CR", { hour: "2-digit", minute: "2-digit" })}</TableCell>
                   <TableCell>{new Date(s.hora_fin).toLocaleTimeString("es-CR", { hour: "2-digit", minute: "2-digit" })}</TableCell>
+                  <TableCell>{s.entrenador_asignado?? "No asignado"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

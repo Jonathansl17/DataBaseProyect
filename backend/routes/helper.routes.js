@@ -7,6 +7,7 @@ import {
     getAsistencia,
     getTipoMembresia,
     getCliente,
+    getEntrenadores
 } from "../controllers/helper.controller.js";
 
 const router = Router();
@@ -16,5 +17,6 @@ router.get("/clases", getClases);
 router.get("/asistencia", getAsistencia);
 router.get("/tipoMembresia", getTipoMembresia);
 router.get("/cliente/:cedula", getCliente);
+router.get("/entrenadores", getEntrenadores);
 
 export default router

@@ -278,14 +278,6 @@ CREATE  TABLE clase(
 )
 GO
 
---Tabla intermedia entrenador_clase
-CREATE TABLE entrenador_clase(
-	cedula	  CedulaRestringida	NOT NULL,
-	id_clase INT				NOT NULL
-
-	CONSTRAINT PK_entrenador_clase PRIMARY KEY(cedula, id_clase) 
-)
-GO
 
 -- Tabla Grupo
 CREATE TABLE grupo (
@@ -340,6 +332,20 @@ CREATE TABLE inscripcion_sesion_programada (
     REFERENCES cliente(cedula)
     ON DELETE CASCADE ON UPDATE CASCADE
 );
+
+
+--Tabla intermedia entrenador-sesion programada
+CREATE TABLE entrenador_sesion_programada (
+    id_sesion_programada INT NOT NULL,
+    cedula_entrenador CedulaRestringida NOT NULL,
+    CONSTRAINT PK_entrenador_sesion_programada PRIMARY KEY (id_sesion_programada),
+    CONSTRAINT FK_entrenador_sesion FOREIGN KEY (id_sesion_programada) REFERENCES sesion_programada(id_sesion_programada)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_entrenador_sesion_entrenador FOREIGN KEY (cedula_entrenador) REFERENCES entrenador(cedula)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+SELECT * FROM entrenador
 
 
 
@@ -429,28 +435,6 @@ ADD CONSTRAINT FK_estado_estados FOREIGN KEY(estado)
 REFERENCES estados_maquinas(id_estado);
 GO
 
-
-
-
-
-
---Llaves foraneas que tienen que ver con entrenador
---FK: entrenador_clase -> entrenador
-ALTER TABLE entrenador_clase
-ADD CONSTRAINT FK_entrenador_clase_entrenador FOREIGN KEY(cedula)
-REFERENCES entrenador(cedula)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
-GO
-
-
---FK: entrenador_clase -> clase
-ALTER TABLE entrenador_clase
-ADD CONSTRAINT FK_entrenador_clase_clase FOREIGN KEY(id_clase)
-REFERENCES clase(id_clase)
-ON DELETE CASCADE
-ON UPDATE CASCADE;
-GO
 
 
 
@@ -801,17 +785,6 @@ INSERT INTO clase (nombre, descripcion) VALUES
 ('TRX','Con suspensión');
 
 
-
--- Tabla entrenador_clase
-INSERT INTO entrenador_clase (cedula, id_clase) VALUES
-(373450054, 9),
-(198689770, 6),
-(866266009, 3),
-(758085848, 3),
-(920327174, 10);
-
-
-
 -- Tabla estados_maquinas
 INSERT INTO estados_maquinas (id_estado, estado) VALUES
 (1,'Operativa'),(2,'Reparación'),(3,'Fuera servicio'),
@@ -890,6 +863,13 @@ INSERT INTO sesion_programada (id_sesion, fecha) VALUES
 (10, '2025-06-10');
 
 
+INSERT INTO entrenador_sesion_programada (id_sesion_programada, cedula_entrenador)
+VALUES 
+(3, 866266009),
+(6, 198689770), 
+(9, 373450054), 
+(10, 920327174); 
+
 
 
 
@@ -953,7 +933,7 @@ SELECT * FROM tipo_membresia;
 SELECT * FROM membresia;
 SELECT * FROM cliente_membresias;
 SELECT * FROM clase;
-SELECT * FROM entrenador_clase;
+SELECT * FROM entrenador_sesion_programada
 SELECT * FROM estados_maquinas;
 SELECT * FROM maquina;
 SELECT * FROM admin_maquina;
@@ -1008,7 +988,7 @@ GO
 
 GO
 --Vista de sesion para ver el grupo,horario y la clase que el cliente debe asistir por medio de la tabla asistencia
-CREATE VIEW vista_clientes_sesion AS
+CREATE OR ALTER VIEW vista_clientes_sesion AS
 SELECT
     p.cedula,
     p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_cliente,
@@ -1020,6 +1000,7 @@ SELECT
     h.dia,
     h.hora_inicio,
     h.hora_fin,
+    ent.nombre + ' ' + ent.apellido1  AS entrenador_asignado,
     CASE 
         WHEN ac.asistio IS NULL THEN NULL
         ELSE ac.asistio
@@ -1032,8 +1013,11 @@ JOIN sesion s ON sp.id_sesion = s.id_sesion
 JOIN clase c ON s.id_clase = c.id_clase
 JOIN grupo g ON s.numero_grupo = g.numero_grupo
 JOIN horario h ON s.id_horario = h.id_horario
+LEFT JOIN entrenador_sesion_programada esp ON esp.id_sesion_programada = sp.id_sesion_programada
+LEFT JOIN persona ent ON esp.cedula_entrenador = ent.cedula
 LEFT JOIN asistencia_cliente ac ON ac.cedula = isp.cedula AND ac.id_sesion_programada = sp.id_sesion_programada;
 GO
+
 
 SELECT * FROM vista_clientes_sesion
 GO
@@ -1575,9 +1559,78 @@ BEGIN
 END;
 GO
 
+GO
+
+--Procedimiento almacenado transaccional para asignar un entrenador a una sesion programada
+CREATE OR ALTER PROCEDURE asignar_entrenador_a_sesion_programada (
+    @cedula_entrenador CedulaRestringida,
+    @id_sesion_programada INT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Validar que la sesión programada exista
+        IF NOT EXISTS (
+            SELECT 1 FROM sesion_programada
+            WHERE id_sesion_programada = @id_sesion_programada
+        )
+        BEGIN
+            RAISERROR('❌ La sesión programada indicada no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Validar que el entrenador exista
+        IF NOT EXISTS (
+            SELECT 1 FROM entrenador
+            WHERE cedula = @cedula_entrenador
+        )
+        BEGIN
+            RAISERROR('El entrenador indicado no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Validar que no haya ya un entrenador asignado a esta sesión
+        IF EXISTS (
+            SELECT 1 FROM entrenador_sesion_programada
+            WHERE id_sesion_programada = @id_sesion_programada
+        )
+        BEGIN
+            RAISERROR('Ya hay un entrenador asignado a esta sesión programada.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Asignar el entrenador
+        INSERT INTO entrenador_sesion_programada (
+            id_sesion_programada,
+            cedula_entrenador
+        )
+        VALUES (
+            @id_sesion_programada,
+            @cedula_entrenador
+        );
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        DECLARE @err NVARCHAR(4000) = ERROR_MESSAGE();
+
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+
+        RAISERROR(@err, 16, 1);
+    END CATCH
+END;
+GO
 
 
 
+
+SELECT * FROM entrenador
 GO
 --Procedimiento almacenado transaccional para registrar el pago de membresia a un cliente
 CREATE OR ALTER PROCEDURE registrar_pago_membresia (
@@ -1825,7 +1878,7 @@ GO
 
 
 --Procedimiento almacenado transaccional para obtener estadisticas del gym
-CREATE OR ALTER PROCEDURE obtener_estadisticas_acumuladas_por_fecha
+CREATE OR ALTER PROCEDURE obtener_estadisticas_por_fecha
     @fecha DATE
 AS
 BEGIN
@@ -1848,10 +1901,9 @@ BEGIN
 END;
 GO
 
-EXEC obtener_estadisticas_acumuladas_por_fecha '2025-05-23';
+EXEC obtener_estadisticas_por_fecha '2025-05-23';
 
 GO
-
 
 
 GO
@@ -1918,6 +1970,8 @@ GROUP BY ec.estado;
 
 
 
+
+
 --Consulta avanzada 5: Cuenta la cantidades de sesiones por fecha
 SELECT 
     c.nombre AS clase,
@@ -1932,6 +1986,8 @@ ORDER BY c.nombre, sp.fecha;
 
 
 GO
+
+
 
 --Vista para ver los detalles de las sesiones, esto para poder crear diferentes instancias de estas
 CREATE OR ALTER VIEW vista_sesiones AS
@@ -1952,6 +2008,8 @@ SELECT * FROM vista_sesiones
 
 
 GO
+
+
 --Vista de sesiones programadas
 CREATE OR ALTER VIEW vista_detalles_sesion_programadas AS
 SELECT
@@ -1973,6 +2031,8 @@ GO
 
 GO
 
+
+
 --Vista para ver el total de sesiones creadas por clase
 CREATE OR ALTER VIEW vista_total_clases_por_sesion AS
 SELECT 
@@ -1984,6 +2044,8 @@ FROM clase c
 LEFT JOIN sesion s ON c.id_clase = s.id_clase
 LEFT JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
 GROUP BY c.id_clase, c.nombre, c.descripcion;
+
+
 
 GO
 --vista general de admin maquina, para ver datos de todas las maquinas y admins
@@ -2047,5 +2109,30 @@ BEGIN
 	END CATCH
 END;
 GO
+
+
+--Vista para ver que cliente va a qué clase, cuándo, con qué entrenador.
+--Vista para ver que cliente va a qué clase, cuándo, con qué entrenador.
+CREATE OR ALTER VIEW vista_clientes_sesion_sesion AS
+SELECT
+	p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_cliente,
+    p.cedula,
+    c.nombre AS nombre_clase,
+    g.numero_grupo,
+	h.dia,
+    sp.fecha AS fecha_sesion,
+    h.hora_inicio,
+    h.hora_fin,
+    ent.nombre + ' ' + ent.apellido1 + ' ' + ent.apellido2 AS entrenador_asignado
+FROM inscripcion_sesion_programada isp
+JOIN cliente cli ON cli.cedula = isp.cedula
+JOIN persona p ON p.cedula = cli.cedula
+JOIN sesion_programada sp ON isp.id_sesion_programada = sp.id_sesion_programada
+JOIN sesion s ON sp.id_sesion = s.id_sesion
+JOIN clase c ON s.id_clase = c.id_clase
+JOIN grupo g ON s.numero_grupo = g.numero_grupo
+JOIN horario h ON s.id_horario = h.id_horario
+LEFT JOIN entrenador_sesion_programada esp ON esp.id_sesion_programada = sp.id_sesion_programada
+LEFT JOIN persona ent ON esp.cedula_entrenador = ent.cedula;
 
 
