@@ -2332,36 +2332,34 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Tabla temporal para guardar resultados
+    -- Tabla temporal con solo los campos necesarios
     DECLARE @resultado TABLE (
-        id_maquina INT,
-        tipo VARCHAR(50),
-        modelo VARCHAR(40),
-        marca VARCHAR(30),
-        estado VARCHAR(20),
-        ultima_revision DATE,
-        dias_desde_ultima_revision INT
+        tipo   VARCHAR(50),
+        marca  VARCHAR(30),
+        estado VARCHAR(20)
     );
 
+    -- Variables del cursor
     DECLARE 
-        @id_maquina INT,
-        @tipo VARCHAR(50),
-        @modelo VARCHAR(40),
-        @marca VARCHAR(30),
+        @tipo   VARCHAR(50),
+        @marca  VARCHAR(30),
         @estado VARCHAR(20),
         @ultima_revision DATE,
         @dias INT;
 
+    -- Cursor solo con los campos necesarios
     DECLARE maquinas_cur CURSOR FOR
     SELECT 
-        m.id_maquina, m.tipo, m.modelo, m.marca, em.estado,
+        m.tipo,
+        m.marca,
+        em.estado,
         am.ultima_revision
     FROM maquina m
     JOIN estados_maquinas em ON m.estado = em.id_estado
     LEFT JOIN admin_maquina am ON m.id_maquina = am.id_maquina;
 
     OPEN maquinas_cur
-    FETCH NEXT FROM maquinas_cur INTO @id_maquina, @tipo, @modelo, @marca, @estado, @ultima_revision
+    FETCH NEXT FROM maquinas_cur INTO @tipo, @marca, @estado, @ultima_revision
 
     WHILE @@FETCH_STATUS = 0
     BEGIN
@@ -2372,24 +2370,21 @@ BEGIN
 
         IF @dias IS NULL OR @dias > 1
         BEGIN
-            INSERT INTO @resultado (
-                id_maquina, tipo, modelo, marca, estado, ultima_revision, dias_desde_ultima_revision
-            )
-            VALUES (
-                @id_maquina, @tipo, @modelo, @marca, @estado, @ultima_revision, @dias
-            );
+            INSERT INTO @resultado (tipo, marca, estado)
+            VALUES (@tipo, @marca, @estado);
         END
 
-        FETCH NEXT FROM maquinas_cur INTO @id_maquina, @tipo, @modelo, @marca, @estado, @ultima_revision
+        FETCH NEXT FROM maquinas_cur INTO @tipo, @marca, @estado, @ultima_revision
     END
 
     CLOSE maquinas_cur
     DEALLOCATE maquinas_cur
 
-    -- Usamos un select para poder retornar datos al backend
+    -- Devolver los resultados
     SELECT * FROM @resultado;
 END;
 GO
+
 
 
 EXEC cursor_maquinas_vencidas
