@@ -2331,7 +2331,7 @@ SELECT * FROM maquina
 
 GO
 
---Cursor para verificar las maquinas con mas de 1 dia de revision
+--Cursor para verificar las maquinas con mas de 1 dia sin revision
 CREATE OR ALTER PROCEDURE cursor_maquinas_vencidas
 AS
 BEGIN
@@ -2393,3 +2393,70 @@ GO
 
 
 EXEC cursor_maquinas_vencidas
+
+
+GO
+--Cursor que dice cuales clases no tienen entrenador asignado
+CREATE OR ALTER PROCEDURE cursor_sesiones_sin_entrenador
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Tabla temporal con solo los campos requeridos
+    DECLARE @resultado TABLE (
+        id_sesion_programada INT,
+        nombre_clase VARCHAR(50),
+        numero_grupo TINYINT
+    );
+
+    -- Variables del cursor
+    DECLARE 
+        @id_sesion_programada INT,
+        @nombre_clase VARCHAR(50),
+        @numero_grupo TINYINT;
+
+    -- Cursor que obtiene solo sesiones programadas sin entrenador asignado
+    DECLARE cur_sesiones CURSOR FOR
+    SELECT 
+        sp.id_sesion_programada,
+        c.nombre,
+        g.numero_grupo
+    FROM sesion_programada sp
+    JOIN sesion s ON sp.id_sesion = s.id_sesion
+    JOIN clase c ON s.id_clase = c.id_clase
+    JOIN grupo g ON s.numero_grupo = g.numero_grupo
+    LEFT JOIN entrenador_sesion_programada esp 
+        ON esp.id_sesion_programada = sp.id_sesion_programada
+    WHERE esp.id_sesion_programada IS NULL
+    AND sp.fecha >= CAST(GETDATE() AS DATE);
+
+    OPEN cur_sesiones;
+
+    FETCH NEXT FROM cur_sesiones 
+    INTO @id_sesion_programada, @nombre_clase, @numero_grupo;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        -- Insertar en la tabla temporal
+        INSERT INTO @resultado (
+            id_sesion_programada, nombre_clase, numero_grupo
+        )
+        VALUES (
+            @id_sesion_programada, @nombre_clase, @numero_grupo
+        );
+
+        FETCH NEXT FROM cur_sesiones 
+        INTO @id_sesion_programada, @nombre_clase, @numero_grupo;
+    END
+		
+	--Cerrar y liberar el cursor
+    CLOSE cur_sesiones;
+    DEALLOCATE cur_sesiones;
+
+    -- Mostrar los resultos
+    SELECT * FROM @resultado
+    ORDER BY id_sesion_programada ASC;
+END;
+GO
+
+EXEC cursor_sesiones_sin_entrenador

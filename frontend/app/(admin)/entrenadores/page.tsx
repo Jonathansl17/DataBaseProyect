@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState,useRef } from "react"
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle
 } from "@/components/ui/card"
@@ -21,6 +21,51 @@ export default function AsignarEntrenadorPage() {
   const [estadisticas, setEstadisticas] = useState<EstadisticaEntrenador[]>([])
   const [selectedEntrenador, setSelectedEntrenador] = useState("")
   const [selectedSesion, setSelectedSesion] = useState("")
+  const yaMostrado = useRef(false)
+
+  useEffect(() => {
+    const verificarSesionesSinEntrenador = async () => {
+      try {
+        if (yaMostrado.current) return
+        yaMostrado.current = true
+
+        const toastKey = "toastSesionesMostrado"
+        if (localStorage.getItem(toastKey)) return
+
+        const res = await fetch("http://localhost:3100/sesiones/cursorSesionesSinEntrenador")
+        const data = await res.json()
+
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          const sesiones = data.data
+
+          const resumen = sesiones
+            .slice(0, 3)
+            .map((s: any) => `${s.nombre_clase} (Grupo ${s.numero_grupo})`)
+            .join(", ") + (sesiones.length > 3 ? ` y ${sesiones.length - 3} más...` : "")
+
+          toast.warning(`${sesiones.length} sesiones sin entrenador asignado`, {
+            description: resumen,
+            duration: 6000,
+            action: {
+              label: "Ver detalles",
+              onClick: () => {
+                window.location.href = "/sesiones"
+              },
+            },
+          })
+
+          localStorage.setItem(toastKey, "true")
+          setTimeout(() => {
+            localStorage.removeItem(toastKey)
+          }, 10000)
+        }
+      } catch (error) {
+        console.error("Error al verificar sesiones sin entrenador:", error)
+      }
+    }
+
+    verificarSesionesSinEntrenador()
+  }, [])
 
 
   const fetchEntrenadores = async () => {

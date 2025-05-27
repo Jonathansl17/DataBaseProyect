@@ -260,3 +260,31 @@ export const promedioPorGrupoYCupos = async (req, res) => {
     }
 }
 
+
+export const cursorSesionesSinEntrenador = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active Sql server connection"
+        });
+    }
+
+    try {
+        const result = await connection
+            .request()
+            .execute("cursor_sesiones_sin_entrenador");
+        console.log(result);
+        res.json({
+            success: true,
+            data : result.recordset
+        });
+    } catch (err) {
+        console.error("Error executing consulta_avanzada1 procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
