@@ -15,6 +15,7 @@ export function Header() {
 
     if (response.ok) {
       console.log("Desconectado");
+      localStorage.removeItem("toastMaquinasMostrado");
       router.push("/");
     }
   }

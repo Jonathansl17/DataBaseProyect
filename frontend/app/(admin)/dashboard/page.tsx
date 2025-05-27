@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState ,useRef} from "react"
 import Link from "next/link"
 import {
   Users,
@@ -27,39 +27,51 @@ export default function Dashboard() {
   const [datos, setDatos] = useState<datosEstadisticas | null>(null)
   const [fecha, setFecha] = useState<string>(new Date().toISOString().split("T")[0]) 
   const [loading, setLoading] = useState(false)
+  const yaMostrado = useRef(false)
+useEffect(() => {
+    const verificarMaquinas = async () => {
+      try {
+        if (yaMostrado.current) return
+        yaMostrado.current = true
 
-  useEffect(() => {
-  const verificarMaquinas = async () => {
-    try {
-      const res = await fetch("http://localhost:3100/maquinas/cursorMaquinasVencidas")
-      const data = await res.json()
+        const toastKey = "toastMaquinasMostrado"
+        if (localStorage.getItem(toastKey)) return
 
-      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-        const maquinas = data.data
+        const res = await fetch("http://localhost:3100/maquinas/cursorMaquinasVencidas")
+        const data = await res.json()
 
-        const resumen = maquinas
-          .slice(0, 3)
-          .map((m:any) => `${m.tipo} `)
-          .join(", ") + (maquinas.length > 3 ? `, y ${maquinas.length - 3} más...` : "")
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+          const maquinas = data.data
 
-        toast.warning(`${maquinas.length} máquinas necesitan revisión`, {
-          description: resumen,
-          duration: 6000,
-          action: {
-            label: "Ver detalles",
-            onClick: () => {
-              window.location.href = "/administradores"
+          const resumen = maquinas
+            .slice(0, 3)
+            .map((m: any) => `${m.tipo}`)
+            .join(", ") + (maquinas.length > 3 ? ` y ${maquinas.length - 3} más...` : "")
+
+          toast.warning(`${maquinas.length} máquinas necesitan revisión`, {
+            description: resumen,
+            duration: 6000,
+            action: {
+              label: "Ver detalles",
+              onClick: () => {
+                window.location.href = "/administradores"
+              },
             },
-          },
-        })
-      }
-    } catch (error) {
-      console.error("Error al verificar máquinas vencidas:", error)
-    }
-  }
+          })
 
-  verificarMaquinas()
-}, [])
+          localStorage.setItem(toastKey, "true")
+          setTimeout(() => {
+            localStorage.removeItem(toastKey)
+          }, 10000)
+        }
+      } catch (error) {
+        console.error("Error al verificar máquinas vencidas:", error)
+      }
+    }
+
+    verificarMaquinas()
+  }, [])
+
 
 
 
