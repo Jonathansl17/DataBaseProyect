@@ -10,26 +10,16 @@ import {
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
-
-interface Entrenador {
-  cedula: string
-  nombre: string
-  apellido1: string
-  apellido2: string
-  tipo: string
-}
-
-interface SesionUnica {
-  id: number
-  descripcion: string
-}
+import Entrenador from "@/types/entrenador"
+import SesionSinEntrenador from "@/types/sesionUnica"
 
 export default function AsignarEntrenadorPage() {
   const [entrenadores, setEntrenadores] = useState<Entrenador[]>([])
-  const [sesiones, setSesiones] = useState<SesionUnica[]>([])
+  const [sesiones, setSesiones] = useState<SesionSinEntrenador[]>([])
   const [selectedEntrenador, setSelectedEntrenador] = useState("")
   const [selectedSesion, setSelectedSesion] = useState("")
 
+  // 🚀 Cargar entrenadores y sesiones sin entrenador
   useEffect(() => {
     const fetchEntrenadores = async () => {
       try {
@@ -47,26 +37,19 @@ export default function AsignarEntrenadorPage() {
 
     const fetchSesiones = async () => {
       try {
-        const res = await fetch("http://localhost:3100/clientes/vistaClientesSesion")
+        const res = await fetch("http://localhost:3100/entrenadores/vistaSesionesSinEntrenador")
         const data = await res.json()
-        if (data.success && Array.isArray(data.tables[0])) {
-          const sesionesUnicas = Array.from(
-            new Map(
-              data.tables[0].map((s: any) => [
-                s.id_sesion_programada,
-                {
-                  id: s.id_sesion_programada,
-                  descripcion: `${s.nombre_clase} - ${s.fecha_sesion.slice(0, 10)} (${s.hora_inicio.slice(11, 16)} - ${s.hora_fin.slice(11, 16)}) - Grupo ${s.numero_grupo}`
-                },
-              ])
-            ).values()
-          )
-          setSesiones(sesionesUnicas)
+        if (data.success && Array.isArray(data.data)) {
+          const sesionesFormateadas = data.data.map((s: any) => ({
+            id: s.id_sesion_programada,
+            descripcion: `${s.nombre_clase} - ${s.fecha.slice(0, 10)} (${s.hora_inicio.slice(11, 16)} - ${s.hora_fin.slice(11, 16)}) - Grupo ${s.numero_grupo}`
+          }))
+          setSesiones(sesionesFormateadas)
         } else {
-          throw new Error("Formato inválido de sesiones")
+          throw new Error("Formato inválido de sesiones sin entrenador")
         }
       } catch (error) {
-        toast.error("Error al cargar sesiones")
+        toast.error("Error al cargar sesiones sin entrenador")
       }
     }
 
@@ -74,6 +57,7 @@ export default function AsignarEntrenadorPage() {
     fetchSesiones()
   }, [])
 
+  // ✅ Asignar entrenador a sesión
   const asignarEntrenador = async () => {
     try {
       const res = await fetch("http://localhost:3100/entrenadores/asignarEntrenadorASesionProgramada", {
@@ -101,7 +85,7 @@ export default function AsignarEntrenadorPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Asignar Entrenador</h1>
-      <p className="text-muted-foreground">Asigna un entrenador a una sesión programada</p>
+      <p className="text-muted-foreground">Asigna un entrenador a una sesión programada sin asignación previa</p>
 
       <Card>
         <CardHeader>
@@ -109,6 +93,7 @@ export default function AsignarEntrenadorPage() {
           <CardDescription>Selecciona un entrenador y una sesión</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Select Entrenador */}
           <div>
             <Label>Entrenador</Label>
             <Select value={selectedEntrenador} onValueChange={setSelectedEntrenador}>
@@ -125,6 +110,7 @@ export default function AsignarEntrenadorPage() {
             </Select>
           </div>
 
+          {/* Select Sesión */}
           <div>
             <Label>Sesión Programada</Label>
             <Select value={selectedSesion} onValueChange={setSelectedSesion}>

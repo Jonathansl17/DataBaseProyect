@@ -990,21 +990,15 @@ GO
 --Vista de sesion para ver el grupo,horario y la clase que el cliente debe asistir por medio de la tabla asistencia
 CREATE OR ALTER VIEW vista_clientes_sesion AS
 SELECT
+	p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_cliente,
     p.cedula,
-    p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_cliente,
-    sp.id_sesion_programada,
     c.nombre AS nombre_clase,
-    c.descripcion AS descripcion_clase,
     g.numero_grupo,
+	h.dia,
     sp.fecha AS fecha_sesion,
-    h.dia,
     h.hora_inicio,
     h.hora_fin,
-    ent.nombre + ' ' + ent.apellido1  AS entrenador_asignado,
-    CASE 
-        WHEN ac.asistio IS NULL THEN NULL
-        ELSE ac.asistio
-    END AS asistio
+    ent.nombre + ' ' + ent.apellido1 + ' ' + ent.apellido2 AS entrenador_asignado
 FROM inscripcion_sesion_programada isp
 JOIN cliente cli ON cli.cedula = isp.cedula
 JOIN persona p ON p.cedula = cli.cedula
@@ -1014,9 +1008,7 @@ JOIN clase c ON s.id_clase = c.id_clase
 JOIN grupo g ON s.numero_grupo = g.numero_grupo
 JOIN horario h ON s.id_horario = h.id_horario
 LEFT JOIN entrenador_sesion_programada esp ON esp.id_sesion_programada = sp.id_sesion_programada
-LEFT JOIN persona ent ON esp.cedula_entrenador = ent.cedula
-LEFT JOIN asistencia_cliente ac ON ac.cedula = isp.cedula AND ac.id_sesion_programada = sp.id_sesion_programada;
-GO
+LEFT JOIN persona ent ON esp.cedula_entrenador = ent.cedula;
 
 
 SELECT * FROM vista_clientes_sesion
@@ -2028,6 +2020,7 @@ JOIN grupo g ON g.numero_grupo = s.numero_grupo
 JOIN horario h ON h.id_horario = s.id_horario;
 GO
 
+SELECT * FROM vista_clientes_sesion
 
 GO
 
@@ -2111,28 +2104,26 @@ END;
 GO
 
 
---Vista para ver que cliente va a qué clase, cuándo, con qué entrenador.
---Vista para ver que cliente va a qué clase, cuándo, con qué entrenador.
-CREATE OR ALTER VIEW vista_clientes_sesion_sesion AS
-SELECT
-	p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_cliente,
-    p.cedula,
-    c.nombre AS nombre_clase,
-    g.numero_grupo,
-	h.dia,
-    sp.fecha AS fecha_sesion,
-    h.hora_inicio,
-    h.hora_fin,
-    ent.nombre + ' ' + ent.apellido1 + ' ' + ent.apellido2 AS entrenador_asignado
-FROM inscripcion_sesion_programada isp
-JOIN cliente cli ON cli.cedula = isp.cedula
-JOIN persona p ON p.cedula = cli.cedula
-JOIN sesion_programada sp ON isp.id_sesion_programada = sp.id_sesion_programada
+
+
+GO
+--Vista de sesiones programadas sin entrenador asignado
+CREATE VIEW vista_sesiones_sin_entrenador
+AS
+SELECT 
+  sp.id_sesion_programada,
+  c.nombre AS nombre_clase,
+  g.numero_grupo,
+  h.hora_inicio,
+  h.hora_fin,
+  sp.fecha
+FROM sesion_programada sp
 JOIN sesion s ON sp.id_sesion = s.id_sesion
 JOIN clase c ON s.id_clase = c.id_clase
 JOIN grupo g ON s.numero_grupo = g.numero_grupo
 JOIN horario h ON s.id_horario = h.id_horario
 LEFT JOIN entrenador_sesion_programada esp ON esp.id_sesion_programada = sp.id_sesion_programada
-LEFT JOIN persona ent ON esp.cedula_entrenador = ent.cedula;
+WHERE esp.id_sesion_programada IS NULL 
+GO
 
-
+SELECT * FROM vista_sesiones_sin_entrenador

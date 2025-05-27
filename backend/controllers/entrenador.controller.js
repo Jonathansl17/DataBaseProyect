@@ -59,3 +59,31 @@ export const vistaClienteSesionEntrenador = async (req, res) => {
         });
     }
 }
+
+export const vistaSesionesSinEntrenador = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(500).json({
+            success: false,
+            message: "No active SQL Server connection.",
+        });
+    }
+
+    try {
+        const result = await connection
+            .request()
+            .query("SELECT * FROM vista_sesiones_sin_entrenador");
+
+        return res.status(200).json({
+            success: true,
+            data: result.recordset,
+        });
+    } catch (error) {
+        console.error("Error getting sessions without trainer:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error getting sessions without trainer.",
+        });
+    }
+}
