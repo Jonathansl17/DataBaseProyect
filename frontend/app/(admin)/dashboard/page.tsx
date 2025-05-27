@@ -20,13 +20,39 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { datosEstadisticas } from "@/types/estadisticas"
+import { toast } from "sonner"
+
 
 export default function Dashboard() {
   const [datos, setDatos] = useState<datosEstadisticas | null>(null)
   const [fecha, setFecha] = useState<string>(new Date().toISOString().split("T")[0]) 
   const [loading, setLoading] = useState(false)
 
-  
+  useEffect(() => {
+  const verificarMaquinas = async () => {
+    try {
+      const res = await fetch("http://localhost:3100/maquinas/cursorMaquinasVencidas")
+      const data = await res.json()
+
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        toast.warning(`${data.data.length} máquinas necesitan revisión`, {
+          description: "Haz clic para ver detalles.",
+          action: {
+            label: "Ver máquinas",
+            onClick: () => {
+              window.location.href = "/administradores" 
+            },
+          },
+        })
+      }
+    } catch (error) {
+      console.error("Error al verificar máquinas vencidas:", error)
+    }
+  }
+
+  verificarMaquinas()
+}, [])
+
 
   const fetchEstadisticas = async (fechaEnvio: string) => {
     try {
