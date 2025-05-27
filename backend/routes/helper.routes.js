@@ -7,7 +7,8 @@ import {
     getAsistencia,
     getTipoMembresia,
     getCliente,
-    getEntrenadores
+    getEntrenadores,
+    getEstadosMaquina
 } from "../controllers/helper.controller.js";
 
 const router = Router();
@@ -18,5 +19,6 @@ router.get("/asistencia", getAsistencia);
 router.get("/tipoMembresia", getTipoMembresia);
 router.get("/cliente/:cedula", getCliente);
 router.get("/entrenadores", getEntrenadores);
-
+router.get("/estadosMaquina", getEstadosMaquina);
+    
 export default router

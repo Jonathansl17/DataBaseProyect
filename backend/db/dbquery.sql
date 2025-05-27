@@ -6,7 +6,6 @@
 --DROP DATABASE fastfitness
 
 
-
 --Regla de restriccion para la cedula, para que el formato sea exactamente 9 numeros sin signos ni letras
 CREATE RULE ReglaCedulaNumerica AS
     @cedula LIKE '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]';
@@ -345,8 +344,18 @@ CREATE TABLE entrenador_sesion_programada (
         ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-SELECT * FROM entrenador
-
+--Tabla de revisiones de maquina
+CREATE TABLE revision_maquina (
+    id_revision INT IDENTITY(1,1) PRIMARY KEY,
+    id_maquina INT NOT NULL,
+    cedula_admin CedulaRestringida NOT NULL,
+    fecha_revision DATE NOT NULL DEFAULT GETDATE(),
+    nuevo_estado TINYINT NOT NULL,
+    observacion VARCHAR(300) NULL,
+    CONSTRAINT FK_revision_maquina_maquina FOREIGN KEY (id_maquina) REFERENCES maquina(id_maquina),
+    CONSTRAINT FK_revision_maquina_admin FOREIGN KEY (cedula_admin) REFERENCES administrador(cedula),
+    CONSTRAINT FK_revision_maquina_estado FOREIGN KEY (nuevo_estado) REFERENCES estados_maquinas(id_estado)
+);
 
 
 -- Agregar las claves foraneas despues de crear todas las tablas
@@ -816,17 +825,16 @@ INSERT INTO clase (nombre, descripcion) VALUES
 
 -- Tabla estados_maquinas
 INSERT INTO estados_maquinas (id_estado, estado) VALUES
-(1,'Operativa'),(2,'Reparación'),(3,'Fuera servicio'),
-(4,'Mantenimiento'),(5,'Nueva'),(6,'Revisada'),(7,'Desuso'),
-(8,'Reasignada'),(9,'Donada'),(10,'Descompuesta');
+(1,'Operativa'),(3,'Reparación'),
+(2,'Mantenimiento'),(4,'Descompuesta');
 
 -- Tabla maquina
 INSERT INTO maquina (estado, tipo, modelo, marca) VALUES
 (1,'Cardio','X1000','LifeFitness'),(2,'Fuerza','P3000','Technogym'),
-(3,'Elíptica','E500','Precor'),(4,'Caminadora','RunFast','Matrix'),
-(5,'Bicicleta','SpinPro','StarTrac'),(6,'Remo','R300','Concept2'),
-(7,'Escaladora','E900','BH'),(8,'Prensa','LegMaster','Nautilus'),
-(9,'Multipower','MPX','Reebok'),(10,'Hack','HX100','Sole');
+(2,'Elíptica','E500','Precor'),(4,'Caminadora','RunFast','Matrix'),
+(3,'Bicicleta','SpinPro','StarTrac'),(4,'Remo','R300','Concept2'),
+(1,'Escaladora','E900','BH'),(4,'Prensa','LegMaster','Nautilus'),
+(2,'Multipower','MPX','Reebok'),(4,'Hack','HX100','Sole');
 
 -- Tabla admin_maquina
 INSERT INTO admin_maquina (cedula, id_maquina,ultima_revision) VALUES
@@ -945,6 +953,12 @@ INSERT INTO inscripcion_sesion_programada (id_sesion_programada, cedula) VALUES
 (8, '290719496'),  
 (9, '867978083'), 
 (10, '934827096'); 
+
+
+
+
+
+
 
 
 SELECT * FROM pagos
@@ -2157,14 +2171,7 @@ GO
 
 SELECT * FROM vista_sesiones_sin_entrenador
 
-
-
-SELECT 
-	p.nombre + p.apellido1 + p.apellido2 as nombreEntrenador,
-	p.cedula
-FROM persona p
-JOIN entrenador e
-ON p.cedula = p.cedula
+SELECT * FROM vista_sesiones_sin_entrenador
 
 
 GO
@@ -2183,4 +2190,97 @@ GO
 SELECT * FROM vista_entrenador_sesiones_totales
 ORDER BY cantidad_sesiones DESC;
 
-SELECT * FROM admin_maquina
+
+SELECT * FROM maquina
+
+SELECT * FROM estados_maquinas
+
+GO
+CREATE OR ALTER PROCEDURE revisar_maquina(
+    @id_maquina INT,
+    @cedula_admin CedulaRestringida,
+    @nuevo_estado TINYINT,
+    @observacion VARCHAR(300)
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF NOT EXISTS (
+            SELECT 1 FROM maquina WHERE id_maquina = @id_maquina
+        )
+        BEGIN
+            RAISERROR('La máquina no existe.', 16, 1);
+            ROLLBACK; RETURN;
+        END
+
+
+        IF NOT EXISTS (
+            SELECT 1 FROM estados_maquinas WHERE id_estado = @nuevo_estado
+        )
+        BEGIN
+            RAISERROR('Estado no válido.', 16, 1);
+            ROLLBACK; RETURN;
+        END
+
+
+        INSERT INTO revision_maquina (id_maquina, cedula_admin, nuevo_estado, observacion)
+        VALUES (@id_maquina, @cedula_admin, @nuevo_estado, @observacion);
+
+
+        UPDATE maquina
+        SET estado = @nuevo_estado
+        WHERE id_maquina = @id_maquina;
+
+
+        UPDATE admin_maquina
+        SET ultima_revision = GETDATE()
+        WHERE id_maquina = @id_maquina AND cedula = @cedula_admin;
+
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+		DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
+
+		IF XACT_STATE() != 0
+			ROLLBACK TRANSACTION;
+
+		RAISERROR(@error, 16, 1);
+	END CATCH
+END;
+GO
+
+GO
+CREATE OR ALTER VIEW vista_revision_maquina AS
+SELECT
+    rm.id_revision,
+    rm.fecha_revision,
+    rm.observacion,
+    m.id_maquina,
+    m.tipo,
+    m.modelo,
+    m.marca,
+    em.estado AS estado_asignado,
+    a.cedula AS cedula_admin,
+    p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_admin
+FROM revision_maquina rm
+JOIN maquina m ON rm.id_maquina = m.id_maquina
+JOIN estados_maquinas em ON rm.nuevo_estado = em.id_estado
+JOIN administrador a ON rm.cedula_admin = a.cedula
+JOIN persona p ON a.cedula = p.cedula;
+GO
+
+SELECT * FROM vista_revision_maquina
+DELETE FROM revision_maquina
+
+EXEC revisar_maquina 1, '264451244', 1, 'Sin novedades. Máquina operativa.';
+EXEC revisar_maquina 2, '264451244', 2, 'Desgaste en bandas. Se requiere mantenimiento.';
+EXEC revisar_maquina 3, '264451244', 3, 'Ruidos extraños en el motor. En reparación.';
+EXEC revisar_maquina 4, '264451244', 4, 'Panel principal no responde. Considerar reemplazo.';
+EXEC revisar_maquina 5, '264451244', 1, 'Revisión rutinaria. Máquina funcional.';
+EXEC revisar_maquina 6, '264451244', 2, 'Se detectó fuga hidráulica leve. En mantenimiento.';
+EXEC revisar_maquina 2, '264451244', 1, 'Mantenimiento completado. Máquina vuelve a estado operativo.';
+EXEC revisar_maquina 7, '264451244', 1, 'Instalada y funcionando correctamente.';
+EXEC revisar_maquina 8, '264451244', 3, 'Inicio de fallo eléctrico. Se requiere reparación.';
+EXEC revisar_maquina 9, '264451244', 4, 'Daño severo en sistema de tracción. Máquina descompuesta.';

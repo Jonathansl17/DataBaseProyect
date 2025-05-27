@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"  
 import { useEffect, useState } from "react"
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
@@ -7,21 +8,12 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import AdminMaquina from "@/types/adminMaquina"
 
-interface AdminMaquina {
-  cedula_admin: string
-  nombre_admin: string
-  id_maquina: number
-  tipo: string
-  modelo: string
-  marca: string
-  estado: string
-  ultima_revision: string
-  cant_maquinas: number
-}
 
 export default function AdminMaquinasPage() {
   const [maquinas, setMaquinas] = useState<AdminMaquina[]>([])
@@ -70,11 +62,19 @@ export default function AdminMaquinasPage() {
   }
 
   return (
-    <div className="space-y-6">
+      <div className="space-y-6">
+    <div className="flex justify-between items-center">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Administración de Máquinas</h1>
         <p className="text-muted-foreground">Control del estado, revisiones y asignaciones</p>
       </div>
+      <Link href="/administradores/maquinas/nuevo" className="mt-4 inline-flex items-center">
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          Nueva maquina
+        </Button>
+      </Link>
+    </div>
 
       <Card>
         <CardHeader>

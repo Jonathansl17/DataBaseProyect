@@ -203,7 +203,7 @@ export default function NuevoPagoPage() {
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar tipo" />
                   </SelectTrigger>
-                <SelectContent className="bg-white text-black shadow-md border border-gray-200 rounded-md">
+                  <SelectContent className="bg-white text-black shadow-md border border-gray-200 rounded-md">
                     {tiposMembresia.map((tipo) => (
                       <SelectItem key={tipo.id_tipo_membresia} value={tipo.id_tipo_membresia.toString()}>
                         {tipo.tipo}
