@@ -606,6 +606,35 @@ END;
 GO
 
 
+/*Triiger que actualiza la cantidad total de maquinas que administra cada admin en la columna
+cant_maquinas, garantizando que siempre este sincronizada.*/
+CREATE OR ALTER TRIGGER trigger_recalcular_cant_maquinas_admin
+ON admin_maquina
+AFTER INSERT, DELETE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE am
+    SET am.cant_maquinas = (
+        SELECT COUNT(*) 
+        FROM admin_maquina am2 
+        WHERE am2.cedula = am.cedula
+    )
+    FROM admin_maquina am
+    WHERE EXISTS (
+        SELECT 1 
+        FROM inserted i 
+        WHERE i.cedula = am.cedula
+        UNION
+        SELECT 1 
+        FROM deleted d 
+        WHERE d.cedula = am.cedula
+    );
+END;
+GO
+
+
 
 
 --Inserciones de prueba a todas las tablas
