@@ -35,12 +35,20 @@ export default function Dashboard() {
       const data = await res.json()
 
       if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-        toast.warning(`${data.data.length} máquinas necesitan revisión`, {
-          description: "Haz clic para ver detalles.",
+        const maquinas = data.data
+
+        const resumen = maquinas
+          .slice(0, 3)
+          .map((m:any) => `${m.tipo} `)
+          .join(", ") + (maquinas.length > 3 ? `, y ${maquinas.length - 3} más...` : "")
+
+        toast.warning(`${maquinas.length} máquinas necesitan revisión`, {
+          description: resumen,
+          duration: 6000,
           action: {
-            label: "Ver máquinas",
+            label: "Ver detalles",
             onClick: () => {
-              window.location.href = "/administradores" 
+              window.location.href = "/administradores"
             },
           },
         })
@@ -52,6 +60,7 @@ export default function Dashboard() {
 
   verificarMaquinas()
 }, [])
+
 
 
   const fetchEstadisticas = async (fechaEnvio: string) => {
