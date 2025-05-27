@@ -263,7 +263,7 @@ CREATE TABLE admin_maquina(
 	cedula  CedulaRestringida	NOT NULL,
 	id_maquina INT				NOT NULL,
 	ultima_revision DATE		NOT NULL,
-	cant_maquinas INT			NOT NULL,
+	cant_maquinas INT			,
 	CONSTRAINT PK_admin_maquina PRIMARY KEY (cedula, id_maquina)
 );
 
@@ -829,17 +829,17 @@ INSERT INTO maquina (estado, tipo, modelo, marca) VALUES
 (9,'Multipower','MPX','Reebok'),(10,'Hack','HX100','Sole');
 
 -- Tabla admin_maquina
-INSERT INTO admin_maquina (cedula, id_maquina,ultima_revision, cant_maquinas) VALUES
-(264451244, 1, '2025-05-01', 1),
-(264451244, 2, '2025-05-01', 1),
-(264451244, 3, '2025-05-01', 1),
-(264451244, 4, '2025-05-01', 1),
-(264451244, 5, '2025-05-01', 1),
-(264451244, 6, '2025-05-01', 1),
-(264451244, 7, '2025-05-01', 1),
-(264451244, 8, '2025-05-01', 1),
-(264451244, 9, '2025-05-01', 1),
-(264451244,10, '2025-05-01', 1);
+INSERT INTO admin_maquina (cedula, id_maquina,ultima_revision) VALUES
+(264451244, 1, '2025-05-01'),
+(264451244, 2, '2025-05-01'),
+(264451244, 3, '2025-05-01'),
+(264451244, 4, '2025-05-01'),
+(264451244, 5, '2025-05-01'),
+(264451244, 6, '2025-05-01'),
+(264451244, 7, '2025-05-01'),
+(264451244, 8, '2025-05-01'),
+(264451244, 9, '2025-05-01'),
+(264451244,10, '2025-05-01');
 
 
 -- Tabla grupo
@@ -2183,3 +2183,4 @@ GO
 SELECT * FROM vista_entrenador_sesiones_totales
 ORDER BY cantidad_sesiones DESC;
 
+SELECT * FROM admin_maquina
