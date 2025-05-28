@@ -76,6 +76,7 @@ export default function NuevoPagoPage() {
     let method = "POST"
     let body: any = {}
 
+
     if (modo === "registrar") {
       if (!tipoMembresia) {
         setError("Selecciona un tipo de membresía.")
@@ -106,7 +107,15 @@ export default function NuevoPagoPage() {
         body: JSON.stringify(body),
       })
 
-      if (!res.ok) throw new Error("Error al registrar el pago.")
+      if (!res.ok)
+        switch(modo){
+          case "registrar":
+            throw new Error("Error al registrar el pago.")
+          case "actualizar":
+            throw new Error("Error al actualizar el pago, primero se debe crear una membresia del tipo " + tiposMembresia.find(t => t.id_tipo_membresia === tipoMembresia)?.tipo + " y luego actualizarla, esto debido a que cada membresia esta ligada a un historial de pagos" )
+          case "renovar":
+            throw new Error("Error al renovar el pago.")
+        }
       setEstado("Operación completada exitosamente.")
       setPersona(null)
     } catch (err: any) {

@@ -1028,11 +1028,12 @@ LEFT JOIN (
     ON dc.cedula = dm.cedula;
 GO
 
-
+SELECT * FROM asistencia_cliente
 GO
 --Vista de sesion para ver el grupo,horario y la clase que el cliente debe asistir por medio de la tabla asistencia
 CREATE OR ALTER VIEW vista_clientes_sesion AS
 SELECT
+	sp.id_sesion_programada,
 	p.nombre + ' ' + p.apellido1 + ' ' + p.apellido2 AS nombre_cliente,
     p.cedula,
     c.nombre AS nombre_clase,
@@ -1041,7 +1042,8 @@ SELECT
     sp.fecha AS fecha_sesion,
     h.hora_inicio,
     h.hora_fin,
-    ent.nombre + ' ' + ent.apellido1 + ' ' + ent.apellido2 AS entrenador_asignado
+    ent.nombre + ' ' + ent.apellido1 + ' ' + ent.apellido2 AS entrenador_asignado,
+	ac.asistio
 FROM inscripcion_sesion_programada isp
 JOIN cliente cli ON cli.cedula = isp.cedula
 JOIN persona p ON p.cedula = cli.cedula
@@ -1051,7 +1053,9 @@ JOIN clase c ON s.id_clase = c.id_clase
 JOIN grupo g ON s.numero_grupo = g.numero_grupo
 JOIN horario h ON s.id_horario = h.id_horario
 LEFT JOIN entrenador_sesion_programada esp ON esp.id_sesion_programada = sp.id_sesion_programada
-LEFT JOIN persona ent ON esp.cedula_entrenador = ent.cedula;
+LEFT JOIN persona ent ON esp.cedula_entrenador = ent.cedula
+LEFT JOIN asistencia_cliente ac ON ac.cedula = p.cedula AND ac.id_sesion_programada = sp.id_sesion_programada
+
 GO
 
 SELECT * FROM vista_clientes_sesion
@@ -2686,3 +2690,6 @@ INSERT INTO inscripcion_sesion_programada(cedula, id_sesion_programada, fecha_in
 (100000029, 10, '2025-01-15');
 
 SELECT * FROM sesion_programada
+
+
+SELECT * FROM vista_clientes_sesion
