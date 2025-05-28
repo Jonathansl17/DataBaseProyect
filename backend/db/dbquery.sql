@@ -589,30 +589,46 @@ GO
 
 
 /*
-Este trigger se ejecuta cada vez que se actualiza cualquier membresia, verificando si alguna membresia ya paso su fecha
-de expiracion (la fecha de hoy)
+Este trigger se ejecuta cada vez que se actualiza cualquier membresia, verificando 
+si alguna membresia ya paso su fecha de expiracion (la fecha de hoy)
 */
-
-CREATE OR ALTER TRIGGER trigger_estado_cliente_por_vencimiento
-ON membresia
-AFTER UPDATE
+CREATE OR ALTER TRIGGER trigger_actualizar_estado_cliente
+ON cliente_membresias
+AFTER INSERT, UPDATE, DELETE
 AS
 BEGIN
     SET NOCOUNT ON;
 
-
-
+    -- Primero, actualizar clientes que deben estar activos porque tienen membresia vigente
     UPDATE c
-    SET c.estado = 2 --Pone el estado del cliente en inactivo
+    SET c.estado = 1 -- activo
     FROM cliente c
-    JOIN cliente_membresias cm ON c.cedula = cm.cedula
-    JOIN membresia m ON cm.id_membresia = m.id_membresia
-    WHERE 
-        cm.vigente = 1
-        AND m.fecha_expiracion < CAST(GETDATE() AS DATE) --Condicion de que ya se vencio
-        AND c.estado = 1 --Y que el cliente esta activo
+    WHERE EXISTS (
+        SELECT 1
+        FROM cliente_membresias cm
+        JOIN membresia m ON cm.id_membresia = m.id_membresia
+        WHERE cm.cedula = c.cedula
+          AND cm.vigente = 1
+          AND m.fecha_expiracion >= CAST(GETDATE() AS DATE)
+    )
+    AND c.estado != 1;
+
+    -- Luego, actualizar clientes que deben estar inactivos porque no tienen membresia vigente
+    UPDATE c
+    SET c.estado = 2 -- inactivo
+    FROM cliente c
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM cliente_membresias cm
+        JOIN membresia m ON cm.id_membresia = m.id_membresia
+        WHERE cm.cedula = c.cedula
+          AND cm.vigente = 1
+          AND m.fecha_expiracion >= CAST(GETDATE() AS DATE)
+    )
+    AND c.estado != 2;
 END;
 GO
+
 
 
 /*Triiger que actualiza la cantidad total de maquinas que administra cada admin en la columna
@@ -1157,10 +1173,9 @@ BEGIN
             @genero, @distrito, @correo,
             @fecha_nacimiento, @edad
         );
-
         -- Insertar en cliente con estado activo (1)
         INSERT INTO cliente (cedula, estado)
-        VALUES (@cedula, 1);
+        VALUES (@cedula, 2);
 
         -- Insertar el teléfono
         INSERT INTO telefonos_personas (cedula_persona, telefono)
@@ -2693,3 +2708,4 @@ SELECT * FROM sesion_programada
 
 
 SELECT * FROM vista_clientes_sesion
+
