@@ -25,7 +25,7 @@ import { toast } from "sonner"
 
 export default function Dashboard() {
   const [datos, setDatos] = useState<datosEstadisticas | null>(null)
-  const [fecha, setFecha] = useState<string>(new Date().toISOString().split("T")[0]) 
+  const [fecha, setFecha] = useState<string>("2025-05-27") 
   const [loading, setLoading] = useState(false)
   const yaMostrado = useRef(false)
 useEffect(() => {
