@@ -12,8 +12,8 @@ export default function ReportesPage() {
       query: "Consulta avanzada 1: Ranking de clientes por numero de clases",
     },
     {
-      title: "Membresías Vencidas",
-      description: "Clientes con membresías expiradas",
+      title: "Membresías proximas a vencer",
+      description: "Clientes con membresías próximas a vencer",
       icon: Users,
       href: "/reportes/proximasAVencer",
       query: "Consulta avanzada 2: Clientes que tienen membresia proxima a vencer",
