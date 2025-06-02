@@ -4,14 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
-
-interface Revision {
-  id_revision: number
-  fecha_revision: string
-  observacion: string
-  estado_asignado: string
-  nombre_admin: string
-}
+import Revision from "@/types/Revision"
 
 interface Props {
   open: boolean
