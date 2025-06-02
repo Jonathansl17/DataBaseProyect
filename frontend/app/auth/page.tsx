@@ -141,6 +141,10 @@ export default function AuthPage() {
                 Esto arrancará los contenedores ya construidos sin necesidad de recompilar todo nuevamente.
                 </p>
 
+                <p>
+                    Nota: Si se usa docker el host debe de ser: <strong>host.docker.internal</strong>
+                </p>
+
             <p className="mt-2">
               Luego, accede a:
               <br />
