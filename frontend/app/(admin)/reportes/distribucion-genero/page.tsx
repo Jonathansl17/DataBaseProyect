@@ -11,16 +11,12 @@ import {
   Title,
   Tooltip,
   Legend,
+  ChartOptions
 } from "chart.js"
-
+import EstadoGenero from "@/types/estadoGenero"
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
-interface EstadoGenero {
-  estado: string
-  hombres: number
-  mujeres: number
-  total: number
-}
+
 
 export default function DistribucionGeneroChart() {
   const [datos, setDatos] = useState<EstadoGenero[]>([])
@@ -79,7 +75,7 @@ export default function DistribucionGeneroChart() {
     ],
   }
 
-  const chartOptions = {
+  const chartOptions :ChartOptions<"bar">= {
     responsive: true,
     maintainAspectRatio: false, 
     animation: false,
