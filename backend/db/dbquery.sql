@@ -2058,34 +2058,12 @@ JOIN sesion_programada sp ON s.id_sesion = sp.id_sesion
 GROUP BY c.nombre, DATENAME(MONTH, sp.fecha), YEAR(sp.fecha)
 ORDER BY mes DESC
 
-
-
-
 GO
 
 
 
---Vista para ver los detalles de las sesiones, esto para poder crear diferentes instancias de estas
-CREATE OR ALTER VIEW vista_sesiones AS
-SELECT
-    s.id_sesion,
-    c.nombre AS nombre_clase,
-    c.descripcion AS descripcion_clase,
-    g.numero_grupo,
-    h.dia,
-    h.hora_inicio,
-    h.hora_fin
-FROM sesion s
-JOIN clase c ON s.id_clase = c.id_clase
-JOIN grupo g ON s.numero_grupo = g.numero_grupo
-JOIN horario h ON s.id_horario = h.id_horario;
-GO
-SELECT * FROM vista_sesiones
-
 
 GO
-
-
 --Vista de sesiones programadas
 CREATE OR ALTER VIEW vista_detalles_sesion_programadas AS
 SELECT
