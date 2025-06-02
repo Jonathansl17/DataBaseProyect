@@ -95,7 +95,20 @@ export const vistaSesiones = async (req, res) => {
     try {
         const result = await connection
             .request()
-            .query(`SELECT * FROM vista_sesiones;`);
+            .query(`
+                SELECT
+                    s.id_sesion,
+                    c.nombre AS nombre_clase,
+                    c.descripcion AS descripcion_clase,
+                    g.numero_grupo,
+                    h.dia,
+                    h.hora_inicio,
+                    h.hora_fin
+                FROM sesion s
+                JOIN clase c ON s.id_clase = c.id_clase
+                JOIN grupo g ON s.numero_grupo = g.numero_grupo
+                JOIN horario h ON s.id_horario = h.id_horario;
+                `);
         console.log(result);
         res.json({
             success: true,

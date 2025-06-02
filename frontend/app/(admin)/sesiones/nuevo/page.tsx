@@ -36,8 +36,7 @@ export default function CrearSesionPage() {
   useEffect(() => {
     const fetchSesiones = async () => {
       try {
-        //Cambie este por detalles, eran las mismas
-        const res = await fetch("http://localhost:3100/sesiones/vistaDetallesSesion") 
+        const res = await fetch("http://localhost:3100/sesiones/vistaSesiones") 
         const data = await res.json()
         if (data.success && Array.isArray(data.tables?.[0])) {
           setSesiones(data.tables[0])
