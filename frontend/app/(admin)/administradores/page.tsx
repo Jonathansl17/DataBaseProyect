@@ -13,7 +13,7 @@ import { Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import AdminMaquina from "@/types/adminMaquina"
-import RevisionHistoryModal from "./revisiones/page"
+import RevisionHistoryModal from "@/components/RevisionHistoryModal"
 
 export default function AdminMaquinasPage() {
   const [maquinas, setMaquinas] = useState<AdminMaquina[]>([])
