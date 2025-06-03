@@ -1,12 +1,11 @@
 export interface Sesion {
-    cedula: string;
-    nombre_cliente: string;
-    nombre_clase: string;
-    descripcion_clase: string;
-    numero_grupo: number;
-    fecha_sesion: string;
-    dia: string;
-    hora_inicio: string;
-    hora_fin: string;
-    entrenador_asignado: string;
+  id_sesion_programada: number;
+  nombre_clase: string;
+  numero_grupo: number | string;
+  dia: string;
+  fecha_sesion: string | Date;
+  hora_inicio: string;
+  hora_fin: string;
+  entrenador_asignado?: string | null;
+  
 }

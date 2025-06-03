@@ -9,7 +9,8 @@ import {
     distribucionGeneroPorEstado,
     promedioPorGrupoYCupos,
     cursorSesionesSinEntrenador,
-    eliminarSesion
+    eliminarSesion,
+    obtenerInscritosPorSesion
 } from "../controllers/sesion.controller.js";
 const router = Router();
 
@@ -19,6 +20,7 @@ router.get('/promedioPorGrupoYCupos', promedioPorGrupoYCupos);
 router.get('/vistaDetallesSesion', vistaDetallesSesion);
 router.get('/cursorSesionesSinEntrenador', cursorSesionesSinEntrenador);
 router.get('/vistaSesiones', vistaSesiones);
+router.get("/obtenerInscritosPorSesion/:id_sesion_programada", obtenerInscritosPorSesion)
 router.post('/crearSesion', crearSesion);
 router.post('/inscribirClienteASesion', inscribirClienteASesion);
 router.delete('/eliminarSesion', eliminarSesion);

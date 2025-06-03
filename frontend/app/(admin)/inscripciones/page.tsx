@@ -143,14 +143,14 @@ export default function InscripcionesPage() {
 
             <div className="grid gap-3">
               {sesiones.map((sesion, index) => {
-                const isSelected = sesionSeleccionada === index + 1
+                const isSelected = sesionSeleccionada === sesion.id_sesion_programada
                 const isDisabled = sesionSeleccionada !== null && !isSelected
 
                 return (
                   <button
                     key={index}
                     type="button"
-                    onClick={() => setSesionSeleccionada(isSelected ? null : index + 1)}
+                    onClick={() => setSesionSeleccionada(isSelected ? null : sesion.id_sesion_programada)}
                     disabled={isDisabled || !persona || !tieneMembresiaActiva()}
                     className={`relative w-full text-left px-5 py-3 rounded-lg border transition font-medium
                       ${isSelected

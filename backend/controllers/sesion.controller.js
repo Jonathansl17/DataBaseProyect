@@ -339,3 +339,41 @@ export const cursorSesionesSinEntrenador = async (req, res) => {
         });
     }
 }
+
+export const obtenerInscritosPorSesion = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active Sql server connection"
+        });
+    }
+
+    const { id_sesion_programada } = req.params;
+
+    if (!id_sesion_programada) {
+        return res.status(400).json({
+            success: false,
+            message: "El id de la sesión es obligatorio"
+        });
+    }
+
+    try {
+        const result = await connection
+            .request()
+            .input("id_sesion_programada", sql.Int, id_sesion_programada)
+            .execute("obtener_inscritos_por_sesion");
+
+        res.json({
+            success: true,
+            data: result.recordset
+        });
+    } catch (err) {
+        console.error("Error executing obtener_inscritos_por_sesion procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}

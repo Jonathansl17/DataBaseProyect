@@ -2777,3 +2777,32 @@ BEGIN
     END CATCH
 END;
 GO
+
+
+CREATE OR ALTER PROCEDURE obtener_inscritos_por_sesion
+  @id_sesion_programada INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  -- Validar existencia de la sesión
+  IF NOT EXISTS (
+    SELECT 1 FROM sesion_programada WHERE id_sesion_programada = @id_sesion_programada
+  )
+  BEGIN
+    RAISERROR('La sesión programada indicada no existe.', 16, 1);
+    RETURN;
+  END
+
+  -- Consultar los inscritos
+  SELECT 
+    p.cedula,
+    p.nombre,
+    p.correo
+  FROM inscripcion_sesion_programada isp
+  INNER JOIN persona p ON isp.cedula = p.cedula
+  WHERE isp.id_sesion_programada = @id_sesion_programada;
+END;
+GO
+
+EXEC obtener_inscritos_por_sesion 4
