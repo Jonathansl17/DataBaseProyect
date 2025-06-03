@@ -1,9 +1,6 @@
 import sql from 'mssql';
 import { getConnection } from "../config/conectionStore.js";
 
-
-
-
 export const crearClase = async (req, res) => {
     const { connection } = getConnection();
 
@@ -76,6 +73,43 @@ export const crearClase = async (req, res) => {
 };
 
 
+export const eliminarClase = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active SQL Server connection",
+        });
+    }
+
+    const { id_clase } = req.body;
+
+    if (!id_clase) {
+        return res.status(400).json({
+            success: false,
+            message: "El id de la clase es obligatorio"
+        });
+    }
+
+    try {
+        await connection
+            .request()
+            .input("id_clase", sql.Int, id_clase)
+            .execute("eliminar_clase");
+
+        res.status(200).json({
+            success: true,
+            message: "Clase eliminada correctamente"
+        });
+    } catch (err) {
+        console.error("Error executing eliminar_clase procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
 
 
 export const registarAsistencia = async (req, res) => {

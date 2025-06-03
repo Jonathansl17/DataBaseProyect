@@ -41,6 +41,44 @@ export const crearSesion = async (req, res) => {
 }
 
 
+export const eliminarSesion = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active Sql server connection"
+        });
+    }
+
+    const { id_sesion } = req.body;
+
+    if (!id_sesion) {
+        return res.status(400).json({
+            success: false,
+            message: "El id de la sesión es obligatorio"
+        });
+    }
+
+    try {
+        await connection
+            .request()
+            .input("id_sesion", sql.Int, id_sesion)
+            .execute("eliminar_sesion_programada");
+
+        res.json({
+            success: true,
+            message: "Sesión eliminada correctamente"
+        });
+    } catch (err) {
+        console.error("Error executing eliminar_sesion_programada procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
+
 
 export const inscribirClienteASesion = async (req, res) => {
     const { connection } = getConnection();

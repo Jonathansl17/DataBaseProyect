@@ -19,7 +19,7 @@ import {
   TableRow
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Plus, Search } from "lucide-react"
+import { Plus, Search, Trash2 } from "lucide-react"
 
 interface Clase {
   id_clase: number
@@ -31,30 +31,60 @@ interface Clase {
 export default function ClasesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [clases, setClases] = useState<Clase[]>([])
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const fetchClases = async () => {
-      try {
-        const response = await fetch("http://localhost:3100/clases/vistaTotalClasesPorSesion")
-        const json = await response.json()
-
-        if (json.success && Array.isArray(json.data)) {
-          setClases(json.data)
-        } else {
-          throw new Error("Formato de respuesta inesperado")
-        }
-      } catch (error) {
-        console.error("Error al cargar clases:", error)
-      }
-    }
-
     fetchClases()
   }, [])
 
+  const fetchClases = async () => {
+    try {
+      const response = await fetch("http://localhost:3100/clases/vistaTotalClasesPorSesion")
+      const json = await response.json()
+
+      if (json.success && Array.isArray(json.data)) {
+        setClases(json.data)
+      } else {
+        throw new Error("Formato de respuesta inesperado")
+      }
+    } catch (error) {
+      console.error("Error al cargar clases:", error)
+    }
+  }
+
+  const handleEliminarClase = async (id_clase: number) => {
+    const confirmar = confirm("¿Estás seguro de que deseas eliminar esta clase? Esta acción es irreversible.")
+
+    if (!confirmar) return
+
+    try {
+      setLoading(true)
+      const res = await fetch("http://localhost:3100/clases/eliminarClase", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ id_clase })
+      })
+
+      const result = await res.json()
+
+      if (res.ok && result.success) {
+        alert("✅ Clase eliminada correctamente.")
+        await fetchClases()
+      } else {
+        throw new Error(result.message || "Error desconocido al eliminar clase.")
+      }
+    } catch (err) {
+      console.error("Error al eliminar clase:", err)
+      alert("No se pudo eliminar la clase.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const clasesFiltradas = clases.filter((clase) =>
-    `${clase.nombre} ${clase.descripcion}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
+    `${clase.nombre} ${clase.descripcion}`.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -96,18 +126,30 @@ export default function ClasesPage() {
 
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Descripción</TableHead>
-                <TableHead>Sesiones</TableHead>
+              <TableRow className="h-10">
+                <TableHead className="py-1">Id clase</TableHead>
+                <TableHead className="py-1">Nombre</TableHead>
+                <TableHead className="py-1">Descripción</TableHead>
+                <TableHead className="py-1">Sesiones</TableHead>
+                <TableHead className="py-1 text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {clasesFiltradas.map((clase) => (
-                <TableRow key={clase.id_clase}>
-                  <TableCell>{clase.nombre}</TableCell>
-                  <TableCell className="text-muted-foreground">{clase.descripcion}</TableCell>
-                  <TableCell>{clase.total_sesiones}</TableCell>
+                <TableRow key={clase.id_clase} className="h-10">
+                  <TableCell className="py-1">{clase.id_clase}</TableCell>
+                  <TableCell className="py-1">{clase.nombre}</TableCell>
+                  <TableCell className="py-1 text-muted-foreground">{clase.descripcion}</TableCell>
+                  <TableCell className="py-1">{clase.total_sesiones}</TableCell>
+                  <TableCell className="py-1 text-right">
+                    <Button
+                      size="sm"
+                      disabled={loading}
+                      onClick={() => handleEliminarClase(clase.id_clase)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

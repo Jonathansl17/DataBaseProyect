@@ -2687,3 +2687,93 @@ SELECT * FROM sesion_programada
 
 SELECT * FROM vista_clientes_sesion
 
+GO
+
+--Procedimiento almacenado transaccional para eliminar clases
+CREATE OR ALTER PROCEDURE eliminar_clase (
+    @id_clase INT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Verificar existencia de la clase
+        IF NOT EXISTS (
+            SELECT 1 FROM clase WHERE id_clase = @id_clase
+        )
+        BEGIN
+            RAISERROR('La clase especificada no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Eliminar sesiones programadas asociadas a esta clase
+        DELETE sp
+        FROM sesion_programada sp
+        JOIN sesion s ON s.id_sesion = sp.id_sesion
+        WHERE s.id_clase = @id_clase;
+
+        -- Eliminar sesiones relacionadas
+        DELETE FROM sesion
+        WHERE id_clase = @id_clase;
+
+        -- Finalmente, eliminar la clase
+        DELETE FROM clase
+        WHERE id_clase = @id_clase;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        RAISERROR(@error, 16, 1);
+    END CATCH
+END;
+GO
+
+
+--Procedimiento almacenado transaccional para eliminar sesiones programadas
+CREATE OR ALTER PROCEDURE eliminar_sesion_programada (
+    @id_sesion_programada INT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Validar que la sesion programada exista
+        IF NOT EXISTS (
+            SELECT 1 FROM sesion_programada WHERE id_sesion_programada = @id_sesion_programada
+        )
+        BEGIN
+            RAISERROR('La sesion programada indicada no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Eliminar asistencias asociadas 
+        DELETE FROM asistencia_cliente
+        WHERE id_sesion_programada = @id_sesion_programada;
+
+        -- Eliminar inscripción a la sesión
+        DELETE FROM inscripcion_sesion_programada
+        WHERE id_sesion_programada = @id_sesion_programada;
+
+        -- Eliminar entrenador asignado a la sesion si existe
+        DELETE FROM entrenador_sesion_programada
+        WHERE id_sesion_programada = @id_sesion_programada;
+
+        -- Finalmente, eliminar la sesion programada
+        DELETE FROM sesion_programada
+        WHERE id_sesion_programada = @id_sesion_programada;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        RAISERROR(@error, 16, 1);
+    END CATCH
+END;
+GO

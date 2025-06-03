@@ -8,7 +8,8 @@ import {
     cantidadSesionPorMes,
     distribucionGeneroPorEstado,
     promedioPorGrupoYCupos,
-    cursorSesionesSinEntrenador
+    cursorSesionesSinEntrenador,
+    eliminarSesion
 } from "../controllers/sesion.controller.js";
 const router = Router();
 
@@ -20,5 +21,6 @@ router.get('/cursorSesionesSinEntrenador', cursorSesionesSinEntrenador);
 router.get('/vistaSesiones', vistaSesiones);
 router.post('/crearSesion', crearSesion);
 router.post('/inscribirClienteASesion', inscribirClienteASesion);
+router.delete('/eliminarSesion', eliminarSesion);
 
 export default router;
