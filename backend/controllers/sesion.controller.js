@@ -51,9 +51,9 @@ export const eliminarSesion = async (req, res) => {
         });
     }
 
-    const { id_sesion } = req.body;
+    const { id_sesion_programada } = req.body;
 
-    if (!id_sesion) {
+    if (!id_sesion_programada) {
         return res.status(400).json({
             success: false,
             message: "El id de la sesión es obligatorio"
@@ -63,7 +63,7 @@ export const eliminarSesion = async (req, res) => {
     try {
         await connection
             .request()
-            .input("id_sesion", sql.Int, id_sesion)
+            .input("id_sesion_programada", sql.Int, id_sesion_programada)
             .execute("eliminar_sesion_programada");
 
         res.json({
