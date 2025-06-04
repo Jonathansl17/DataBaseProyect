@@ -120,6 +120,46 @@ export const inscribirClienteASesion = async (req, res) => {
 }
 
 
+export const desinscribirClienteDeSesion = async (req, res) => {
+    const { connection } = getConnection();
+
+    if (!connection) {
+        return res.status(400).json({
+            success: false,
+            message: "No active Sql server connection"
+        });
+    }
+
+    const { cedula, id_sesion_programada } = req.body;
+
+    if (!cedula || !id_sesion_programada) {
+        return res.status(400).json({
+            success: false,
+            message: "Todos los campos son obligatorios"
+        });
+    }
+
+    try {
+        await connection
+            .request()
+            .input("cedula", sql.Char(9), cedula)
+            .input("id_sesion_programada", sql.Int, id_sesion_programada)
+            .execute("desinscribir_cliente_de_sesion_programada");
+
+        res.json({
+            success: true,
+            message: "Cliente desinscrito de la sesión correctamente"
+        });
+    } catch (err) {
+        console.error("Error executing desinscribir_cliente_de_sesion_programada procedure: ", err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+}
+
+
 export const vistaSesiones = async (req, res) => {
     const { connection } = getConnection();
 

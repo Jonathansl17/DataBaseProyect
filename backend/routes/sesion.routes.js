@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
     crearSesion,
     inscribirClienteASesion,
+    desinscribirClienteDeSesion,
     vistaSesiones,
     vistaDetallesSesion,
     cantidadSesionPorMes,
@@ -24,5 +25,6 @@ router.get("/obtenerInscritosPorSesion/:id_sesion_programada", obtenerInscritosP
 router.post('/crearSesion', crearSesion);
 router.post('/inscribirClienteASesion', inscribirClienteASesion);
 router.delete('/eliminarSesion', eliminarSesion);
+router.delete('/desinscribirClienteDeSesion', desinscribirClienteDeSesion);
 
 export default router;

@@ -2583,6 +2583,62 @@ EXEC obtener_inscritos_por_sesion 4
 SELECT * FROM vista_detalles_sesion_programadas
 
 
+GO
+
+--Procedimiento almacenado transaccional para desinscribir un cliente de una sesion programada
+CREATE OR ALTER PROCEDURE desinscribir_cliente_de_sesion_programada (
+    @cedula CedulaRestringida,
+    @id_sesion_programada INT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Validar que el cliente esté inscrito en la sesión
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM inscripcion_sesion_programada 
+            WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada
+        )
+        BEGIN
+            RAISERROR('El cliente no está inscrito en esta sesión.', 16, 1);
+            ROLLBACK;
+            RETURN;
+        END
+
+        -- Obtener numero de grupo asociado a la sesión
+        DECLARE @numero_grupo TINYINT;
+        SELECT @numero_grupo = s.numero_grupo
+        FROM sesion_programada sp
+        JOIN sesion s ON s.id_sesion = sp.id_sesion
+        WHERE sp.id_sesion_programada = @id_sesion_programada;
+
+        -- Eliminar la inscripcion
+        DELETE FROM inscripcion_sesion_programada 
+        WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada;
+
+        -- Decrementar cantidad de matriculados en grupo
+        UPDATE grupo
+        SET cantidad_matriculados = cantidad_matriculados - 1
+        WHERE numero_grupo = @numero_grupo;
+
+        -- Eliminar asistencia si existe
+        DELETE FROM asistencia_cliente
+        WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK;
+        RAISERROR(@error, 16, 1);
+    END CATCH
+END;
+GO
+
+
+
 
 -- Mas inserts para las tablas
 INSERT INTO persona (cedula, nombre, apellido1, apellido2, genero, distrito, correo, fecha_nacimiento, edad) VALUES
