@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 
-
 export function Header() {
   const router = useRouter()
 
@@ -19,7 +18,7 @@ export function Header() {
   }
 
   return (
-    <header className="bg-white/80 backdrop-blur border-b border-gray-400 shadow-sm">
+    <header className="sticky top-0 z-40 bg-transparent backdrop-blur-sm">
       <div className="flex items-center justify-between px-6 py-4">
         <div />
         <button

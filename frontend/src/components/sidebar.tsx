@@ -34,8 +34,8 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="w-64 h-full bg-gradient-to-b from-gray-200 to-gray-300 border-r border-gray-400 shadow-inner">
-      <div className="p-6 border-b border-gray-400">
+    <aside className="w-64 h-full bg-transparent">
+      <div className="p-6">
         <h1 className="text-xl font-bold text-gray-900">FastFitness</h1>
         <p className="text-sm text-gray-600">Sistema de Administración</p>
       </div>
@@ -53,7 +53,7 @@ export function Sidebar() {
                 className={cn(
                   "group flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all",
                   isActive
-                    ? "bg-white text-gray-900 shadow"
+                    ? "bg-white text-gray-900 shadow-sm"
                     : "text-gray-700 hover:bg-white/60 hover:text-gray-900"
                 )}
               >

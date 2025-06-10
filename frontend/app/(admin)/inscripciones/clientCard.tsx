@@ -9,7 +9,7 @@ export default function clientCard({ persona, mt }: ClientCardProps) {
     return (
         <div>
             {persona && (
-                <div className={`w-full md:w-[300px] border rounded-lg p-4 shadow-sm bg-gray-50 h-fit ${mt ? `mt-${mt}` : ''}`}>
+                <div className={`w-full md:w-[300px] border rounded-lg p-4 shadow-sm  ${mt ? `mt-${mt}` : ''}`}>
                     <h3 className="text-lg font-semibold mb-1">Cliente encontrado</h3>
                     <p><strong>Nombre:</strong> {persona.nombre} {persona.apellido1} {persona.apellido2}</p>
                     <p><strong>Cédula:</strong> {persona.cedula}</p>
