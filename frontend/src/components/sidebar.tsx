@@ -34,25 +34,27 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <div className="bg-white w-64 shadow-sm">
-      <div className="p-6">
+    <aside className="w-64 h-full bg-gradient-to-b from-gray-200 to-gray-300 border-r border-gray-400 shadow-inner">
+      <div className="p-6 border-b border-gray-400">
         <h1 className="text-xl font-bold text-gray-900">FastFitness</h1>
-        <p className="text-sm text-gray-500">Sistema de Administración</p>
+        <p className="text-sm text-gray-600">Sistema de Administración</p>
       </div>
 
       <nav className="mt-6">
         <div className="px-3">
           {navigation.map((item) => {
             const Icon = item.icon
+            const isActive = pathname === item.href
+
             return (
               <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "group flex items-center px-3 py-2 text-sm font-medium rounded-md mb-1",
-                  pathname === item.href
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                  "group flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all",
+                  isActive
+                    ? "bg-white text-gray-900 shadow"
+                    : "text-gray-700 hover:bg-white/60 hover:text-gray-900"
                 )}
               >
                 <Icon className="mr-3 h-5 w-5" />
@@ -62,6 +64,6 @@ export function Sidebar() {
           })}
         </div>
       </nav>
-    </div>
+    </aside>
   )
 }

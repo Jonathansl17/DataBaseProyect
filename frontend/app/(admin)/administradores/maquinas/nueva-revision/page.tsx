@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 import {
-  Card, CardHeader, CardTitle, CardContent,
+  Card, CardHeader, CardTitle, CardContent, CardDescription,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -43,11 +45,9 @@ export default function NuevaRevisionForm() {
         fetch("http://localhost:3100/consultas/maquinas").then(r => r.json()),
         fetch("http://localhost:3100/consultas/estadosMaquina").then(r => r.json()),
       ])
-
       if (maquinasRes.success) setMaquinas(maquinasRes.data)
       if (estadosRes.success) setEstados(estadosRes.data)
     }
-
     cargarDatos()
   }, [])
 
@@ -85,13 +85,28 @@ export default function NuevaRevisionForm() {
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-4xl pl-6 pr-6 pt-8">
+    <div className="space-y-6">
+      <div className="flex items-center space-x-4">
+        <Link href="/administradores">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver
+          </Button>
+        </Link>
+
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Nueva Revisión</h1>
+          <p className="text-muted-foreground">Registrar una revisión técnica de una máquina</p>
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Nueva Revisión de Máquina</CardTitle>
+          <CardTitle>Datos de la Revisión</CardTitle>
+          <CardDescription>Completa todos los campos requeridos</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
             <Label>Cédula Administrador</Label>
             <div className="flex gap-2">
               <Input
@@ -108,13 +123,13 @@ export default function NuevaRevisionForm() {
             )}
           </div>
 
-          <div>
-            <Label>Maquina</Label>
+          <div className="space-y-2">
+            <Label>Máquina</Label>
             <Select value={idMaquina} onValueChange={setIdMaquina}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccione una máquina" />
               </SelectTrigger>
-              <SelectContent className="bg-white text-black shadow-md border border-gray-200 rounded-md">
+              <SelectContent className="bg-white text-black">
                 {maquinas.map((m) => (
                   <SelectItem key={m.id_maquina} value={m.id_maquina.toString()}>
                     #{m.id_maquina} - {m.tipo} - {m.modelo}
@@ -124,13 +139,13 @@ export default function NuevaRevisionForm() {
             </Select>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label>Nuevo Estado</Label>
             <Select value={estadoNuevo} onValueChange={setEstadoNuevo}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleccione un estado" />
               </SelectTrigger>
-              <SelectContent className="bg-white text-black shadow-md border border-gray-200 rounded-md">
+              <SelectContent className="bg-white text-black">
                 {estados.map((e) => (
                   <SelectItem key={e.id_estado} value={e.id_estado.toString()}>
                     {e.estado}
@@ -140,7 +155,7 @@ export default function NuevaRevisionForm() {
             </Select>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="observacion">Observación</Label>
             <textarea
               id="observacion"
@@ -152,9 +167,11 @@ export default function NuevaRevisionForm() {
             />
           </div>
 
-          <Button className="w-full" onClick={enviarRevision}>
-            Registrar Revisión
-          </Button>
+          <div className="flex justify-start pt-4">
+            <Button onClick={enviarRevision}>
+              Registrar Revisión
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

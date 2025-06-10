@@ -74,7 +74,7 @@ export default function NuevaMaquinaPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
-        <Link href="/maquinas">
+        <Link href="/administradores">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver
