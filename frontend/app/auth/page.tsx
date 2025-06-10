@@ -47,10 +47,10 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-gray-50">
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-gradient-to-br from-gray-100 via-gray-300 to-gray-400 text-gray-900">
       <div className="w-full max-w-6xl flex flex-col lg:flex-row gap-10">
         {/* Formulario a la izquierda */}
-        <div className="w-full lg:w-1/2 bg-white p-6 rounded shadow space-y-4">
+        <div className="w-full lg:w-1/2  p-6 rounded shadow space-y-4">
           <h2 className="text-2xl font-bold text-center mb-4">Conexión</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
