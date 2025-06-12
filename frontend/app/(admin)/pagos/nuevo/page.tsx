@@ -147,19 +147,24 @@ export default function NuevoPagoPage() {
             <CardDescription>Ingresa la cédula del cliente</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+
             <div className="space-y-2">
               <Label htmlFor="modo">Modo</Label>
-              <select
-                id="modo"
-                className="w-full border rounded px-3 py-2"
-                value={modo}
-                onChange={(e) => setModo(e.target.value as any)}
-              >
-                <option value="registrar">Registrar nueva</option>
-                <option value="actualizar">Actualizar existente</option>
-                <option value="renovar">Renovar última</option>
-              </select>
+                <Select
+                  value={modo}
+                  onValueChange={(val) => setModo(val as "registrar" | "actualizar" | "renovar")}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar modo" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white text-black shadow-md border border-gray-200 rounded-md">
+                    <SelectItem value="registrar">Registrar nueva</SelectItem>
+                    <SelectItem value="actualizar">Actualizar existente</SelectItem>
+                    <SelectItem value="renovar">Renovar última</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
+
 
             <div className="flex space-x-2">
               <Input

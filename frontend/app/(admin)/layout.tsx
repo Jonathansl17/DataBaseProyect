@@ -1,25 +1,25 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "../globals.css"
-import { Sidebar } from "@/components/sidebar"
-import { Header } from "@/components/header"
-import { Toaster } from "@/components/ui/sonner" 
+"use client";
 
-const inter = Inter({ subsets: ["latin"] })
+import type React from "react";
+import { Inter } from "next/font/google";
+import "../globals.css";
+import { Sidebar } from "@/components/sidebar";
+import { Header } from "@/components/header";
+import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider, useTheme } from "../../context/ThemeContext";
 
-export const metadata: Metadata = {
-  title: "FastFitness Admin",
-  description: "Sistema de administración para gimnasio FastFitness",
-}
+const inter = Inter({ subsets: ["latin"] });
 
-export default function adminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+function LayoutBody({ children }: { children: React.ReactNode }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-100 via-gray-300 to-gray-400 text-gray-900 font-sans">
+    <div
+      className={`flex h-screen font-sans transition-colors duration-300 ${
+        isDark ? "bg-[#121212] text-white" : "bg-white text-gray-900"
+      }`}
+    >
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
@@ -27,7 +27,15 @@ export default function adminLayout({
           {children}
         </main>
       </div>
-      <Toaster /> 
+      <Toaster />
     </div>
-  )
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <LayoutBody>{children}</LayoutBody>
+    </ThemeProvider>
+  );
 }

@@ -1,33 +1,58 @@
-"use client"
-import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Button } from "./ui/button";
+import { useTheme } from "../../context/ThemeContext";
 
 export function Header() {
-  const router = useRouter()
+  const { theme, toggleTheme } = useTheme();
+  const router = useRouter();
 
   const cerrarSesion = async () => {
     const response = await fetch("http://localhost:3100/connection/disconnect", {
       method: "POST",
-    })
+    });
 
     if (response.ok) {
-      localStorage.removeItem("toastMaquinasMostrado")
-      localStorage.removeItem("toastSesionesMostrado")
-      router.push("/")
+      localStorage.removeItem("toastMaquinasMostrado");
+      localStorage.removeItem("toastSesionesMostrado");
+      router.push("/");
     }
-  }
+  };
 
   return (
-    <header className="sticky top-0 z-40 bg-transparent backdrop-blur-sm">
+    <header
+      className={`sticky top-0 z-40 transition-colors duration-300 ${
+        theme === "light" ? "bg-white" : "bg-[#121212]"
+      }`}
+    >
       <div className="flex items-center justify-between px-6 py-4">
         <div />
-        <button
+
+        <Button
+          size="sm"
+          onClick={toggleTheme}
+          className={`font-medium transition ${
+            theme === "light"
+              ? "text-gray-800 hover:text-black"
+              : "text-white hover:text-gray-300"
+          }`}
+        >
+          {theme === "light" ? "Modo oscuro" : "Modo claro"}
+        </Button>
+
+        <Button
+          size="sm"
           onClick={cerrarSesion}
-          className="text-gray-800 hover:text-black font-medium transition"
+          className={`font-medium transition ${
+            theme === "light"
+              ? "text-gray-800 hover:text-black"
+              : "text-white hover:text-gray-300"
+          }`}
         >
           Cerrar sesión
-        </button>
+        </Button>
       </div>
     </header>
-  )
+  );
 }

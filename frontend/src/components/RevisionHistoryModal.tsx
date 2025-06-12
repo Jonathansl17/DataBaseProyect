@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import Revision from "@/types/Revision"
+import { useTheme } from "../../context/ThemeContext"
 
 interface Props {
   open: boolean
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function RevisionHistoryModal({ open, onClose, idMaquina }: Props) {
+  const { theme } = useTheme()
   const [revisiones, setRevisiones] = useState<Revision[]>([])
 
   useEffect(() => {
@@ -32,7 +34,9 @@ export default function RevisionHistoryModal({ open, onClose, idMaquina }: Props
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className={`max-w-xl transition-colors duration-300 ${
+    theme === "dark" ? "bg-[#1a1a1a] text-white" : "bg-white text-black"
+  }`}>
         <DialogHeader>
           <DialogTitle>Historial de revisiones - Máquina #{idMaquina}</DialogTitle>
         </DialogHeader>
