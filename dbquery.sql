@@ -2459,6 +2459,186 @@ GO
 EXEC cursor_sesiones_sin_entrenador
 
 
+GO
+
+--Procedimiento almacenado transaccional para eliminar clases
+CREATE OR ALTER PROCEDURE eliminar_clase (
+    @id_clase INT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Verificar existencia de la clase
+        IF NOT EXISTS (
+            SELECT 1 FROM clase WHERE id_clase = @id_clase
+        )
+        BEGIN
+            RAISERROR('La clase especificada no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Eliminar sesiones programadas asociadas a esta clase
+        DELETE sp
+        FROM sesion_programada sp
+        JOIN sesion s ON s.id_sesion = sp.id_sesion
+        WHERE s.id_clase = @id_clase;
+
+        -- Eliminar sesiones relacionadas
+        DELETE FROM sesion
+        WHERE id_clase = @id_clase;
+
+        -- Finalmente, eliminar la clase
+        DELETE FROM clase
+        WHERE id_clase = @id_clase;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        RAISERROR(@error, 16, 1);
+    END CATCH
+END;
+GO
+
+
+--Procedimiento almacenado transaccional para eliminar sesiones programadas
+CREATE OR ALTER PROCEDURE eliminar_sesion_programada (
+    @id_sesion_programada INT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Validar que la sesion programada exista
+        IF NOT EXISTS (
+            SELECT 1 FROM sesion_programada WHERE id_sesion_programada = @id_sesion_programada
+        )
+        BEGIN
+            RAISERROR('La sesion programada indicada no existe.', 16, 1);
+            ROLLBACK TRANSACTION;
+            RETURN;
+        END
+
+        -- Eliminar asistencias asociadas 
+        DELETE FROM asistencia_cliente
+        WHERE id_sesion_programada = @id_sesion_programada;
+
+        -- Eliminar inscripción a la sesión
+        DELETE FROM inscripcion_sesion_programada
+        WHERE id_sesion_programada = @id_sesion_programada;
+
+        -- Eliminar entrenador asignado a la sesion si existe
+        DELETE FROM entrenador_sesion_programada
+        WHERE id_sesion_programada = @id_sesion_programada;
+
+        -- Finalmente, eliminar la sesion programada
+        DELETE FROM sesion_programada
+        WHERE id_sesion_programada = @id_sesion_programada;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        RAISERROR(@error, 16, 1);
+    END CATCH
+END;
+GO
+
+
+--Procedimiento almacenado transaccional para obtener las personas inscritas por sesion
+CREATE OR ALTER PROCEDURE obtener_inscritos_por_sesion
+  @id_sesion_programada INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  -- Validar existencia de la sesión
+  IF NOT EXISTS (
+    SELECT 1 FROM sesion_programada WHERE id_sesion_programada = @id_sesion_programada
+  )
+  BEGIN
+    RAISERROR('La sesión programada indicada no existe.', 16, 1);
+    RETURN;
+  END
+
+  -- Consultar los inscritos
+  SELECT 
+    p.cedula,
+    p.nombre,
+    p.correo
+  FROM inscripcion_sesion_programada isp
+  INNER JOIN persona p ON isp.cedula = p.cedula
+  WHERE isp.id_sesion_programada = @id_sesion_programada;
+END;
+GO
+
+EXEC obtener_inscritos_por_sesion 4
+
+SELECT * FROM vista_detalles_sesion_programadas
+
+
+GO
+
+--Procedimiento almacenado transaccional para desinscribir un cliente de una sesion programada
+CREATE OR ALTER PROCEDURE desinscribir_cliente_de_sesion_programada (
+    @cedula CedulaRestringida,
+    @id_sesion_programada INT
+)
+AS
+BEGIN
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Validar que el cliente esté inscrito en la sesión
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM inscripcion_sesion_programada 
+            WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada
+        )
+        BEGIN
+            RAISERROR('El cliente no está inscrito en esta sesión.', 16, 1);
+            ROLLBACK;
+            RETURN;
+        END
+
+        -- Obtener numero de grupo asociado a la sesión
+        DECLARE @numero_grupo TINYINT;
+        SELECT @numero_grupo = s.numero_grupo
+        FROM sesion_programada sp
+        JOIN sesion s ON s.id_sesion = sp.id_sesion
+        WHERE sp.id_sesion_programada = @id_sesion_programada;
+
+        -- Eliminar la inscripcion
+        DELETE FROM inscripcion_sesion_programada 
+        WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada;
+
+        -- Decrementar cantidad de matriculados en grupo
+        UPDATE grupo
+        SET cantidad_matriculados = cantidad_matriculados - 1
+        WHERE numero_grupo = @numero_grupo;
+
+        -- Eliminar asistencia si existe
+        DELETE FROM asistencia_cliente
+        WHERE cedula = @cedula AND id_sesion_programada = @id_sesion_programada;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        DECLARE @error NVARCHAR(4000) = ERROR_MESSAGE();
+        IF XACT_STATE() <> 0 ROLLBACK;
+        RAISERROR(@error, 16, 1);
+    END CATCH
+END;
+GO
+
+
+
 
 -- Mas inserts para las tablas
 INSERT INTO persona (cedula, nombre, apellido1, apellido2, genero, distrito, correo, fecha_nacimiento, edad) VALUES
