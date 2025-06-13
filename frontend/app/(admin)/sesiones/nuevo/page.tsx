@@ -25,6 +25,25 @@ type Sesion = {
   hora_fin: string
 }
 
+// 🕐 Función para ajustar +6 horas a la hora y mostrarla en formato AM/PM
+const ajustarHora = (horaISO: string): string => {
+  try {
+    const date = new Date(horaISO)
+    date.setHours(date.getHours() + 6) // suma manual de 6 horas
+    return date.toLocaleTimeString("es-CR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+  } catch (error) {
+    console.error("Error al sumar 6 horas:", horaISO, error)
+    return "Hora inválida"
+  }
+}
+
+
+
+
 export default function CrearSesionPage() {
   const [sesiones, setSesiones] = useState<Sesion[]>([])
   const [idSesion, setIdSesion] = useState<string>("")
@@ -36,7 +55,7 @@ export default function CrearSesionPage() {
   useEffect(() => {
     const fetchSesiones = async () => {
       try {
-        const res = await fetch("http://localhost:3100/sesiones/vistaSesiones") 
+        const res = await fetch("http://localhost:3100/sesiones/vistaSesiones")
         const data = await res.json()
         if (data.success && Array.isArray(data.tables?.[0])) {
           setSesiones(data.tables[0])
@@ -115,11 +134,7 @@ export default function CrearSesionPage() {
               <SelectContent className="bg-white shadow-lg border border-gray-200 rounded-md">
                 {sesiones.map((s) => (
                   <SelectItem key={`sesion-${s.id_sesion}`} value={s.id_sesion.toString()}>
-                    {`${s.nombre_clase} | ${s.dia} ${new Date(s.hora_inicio).toLocaleTimeString("es-CR", {
-                      hour: "2-digit", minute: "2-digit"
-                    })} - ${new Date(s.hora_fin).toLocaleTimeString("es-CR", {
-                      hour: "2-digit", minute: "2-digit"
-                    })} | Grupo ${s.numero_grupo}`}
+                    {`${s.nombre_clase} | ${s.dia} ${ajustarHora(s.hora_inicio)} - ${ajustarHora(s.hora_fin)} | Grupo ${s.numero_grupo}`}
                   </SelectItem>
                 ))}
               </SelectContent>
