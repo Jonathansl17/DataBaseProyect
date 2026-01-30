@@ -15,6 +15,8 @@ import SesionSinEntrenador from "@/types/sesionUnica"
 import EstadisticaEntrenador from "@/types/estadisticaEntrenador"
 import EntrenadoresSesionesTotales from "./sesionesTotales"
 
+const api= "https://api.mytry.dev"
+
 export default function AsignarEntrenadorPage() {
   const [entrenadores, setEntrenadores] = useState<Entrenador[]>([])
   const [sesiones, setSesiones] = useState<SesionSinEntrenador[]>([])
@@ -32,7 +34,7 @@ export default function AsignarEntrenadorPage() {
         const toastKey = "toastSesionesMostrado"
         if (localStorage.getItem(toastKey)) return
 
-        const res = await fetch("http://localhost:3100/sesiones/cursorSesionesSinEntrenador")
+        const res = await fetch(`${api}/sesiones/cursorSesionesSinEntrenador`)
         const data = await res.json()
 
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
@@ -70,7 +72,7 @@ export default function AsignarEntrenadorPage() {
 
   const fetchEntrenadores = async () => {
     try {
-      const res = await fetch("http://localhost:3100/consultas/entrenadores")
+      const res = await fetch(`${api}/consultas/entrenadores`)
       const data = await res.json()
       if (data.success && Array.isArray(data.data)) {
         setEntrenadores(data.data)
@@ -84,7 +86,7 @@ export default function AsignarEntrenadorPage() {
 
   const fetchSesiones = async () => {
     try {
-      const res = await fetch("http://localhost:3100/entrenadores/vistaSesionesSinEntrenador")
+      const res = await fetch(`${api}/entrenadores/vistaSesionesSinEntrenador`)
       const data = await res.json()
       if (data.success && Array.isArray(data.data)) {
         const sesionesFormateadas = data.data.map((s: any) => ({
@@ -102,7 +104,7 @@ export default function AsignarEntrenadorPage() {
 
   const fetchEstadisticas = async () => {
     try {
-      const res = await fetch("http://localhost:3100/entrenadores/vistaEntrenadorSesionesTotales")
+      const res = await fetch(`${api}/entrenadores/vistaEntrenadorSesionesTotales`)
       const data = await res.json()
       if (data.success && Array.isArray(data.data)) {
         setEstadisticas(data.data)
@@ -124,7 +126,7 @@ export default function AsignarEntrenadorPage() {
 
   const asignarEntrenador = async () => {
     try {
-      const res = await fetch("http://localhost:3100/entrenadores/asignarEntrenadorASesionProgramada", {
+      const res = await fetch(`${api}/entrenadores/asignarEntrenadorASesionProgramada`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

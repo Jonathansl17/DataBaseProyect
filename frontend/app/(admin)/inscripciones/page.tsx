@@ -19,6 +19,7 @@ interface Sesion {
   hora_fin: string
 }
 
+const api = "https://api.mytry.dev"
 
 export default function InscripcionesPage() {
   const [cedula, setCedula] = useState("")
@@ -29,7 +30,7 @@ export default function InscripcionesPage() {
   useEffect(() => {
     const fetchSesiones = async () => {
       try {
-        const response = await fetch("http://localhost:3100/sesiones/vistaDetallesSesion")
+        const response = await fetch(`${api}/sesiones/vistaDetallesSesion`)
         const data = await response.json()
         if (data.success && Array.isArray(data.tables[0])) {
           setSesiones(data.tables[0])
@@ -53,7 +54,7 @@ export default function InscripcionesPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3100/consultas/cliente/${cedula.trim()}`)
+      const response = await fetch(`${api}/consultas/cliente/${cedula.trim()}`)
       const data = await response.json()
       if (data.success) {
         setPersona(data.data)
@@ -84,7 +85,7 @@ export default function InscripcionesPage() {
     }
 
     try {
-      const response = await fetch("http://localhost:3100/sesiones/inscribirClienteASesion", {
+      const response = await fetch(`${api}/sesiones/inscribirClienteASesion`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

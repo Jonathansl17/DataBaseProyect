@@ -31,6 +31,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Cliente } from "@/types/cliente"
 
+const api = "https://api.mytry.dev"
+
 export default function ClientesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -47,7 +49,7 @@ export default function ClientesPage() {
 
   const fetchClientes = async () => {
     try {
-      const response = await fetch("http://localhost:3100/clientes/vistaClientes")
+      const response = await fetch(`${api}/clientes/vistaClientes`)
       const data = await response.json()
       if (data.success && Array.isArray(data.tables) && Array.isArray(data.tables[0])) {
         setClientes(data.tables[0])
@@ -64,7 +66,7 @@ export default function ClientesPage() {
     if (!confirmar) return
 
     try {
-      const response = await fetch("http://localhost:3100/clientes/eliminarPersona", {
+      const response = await fetch(`${api}/clientes/eliminarPersona`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cedula }),
@@ -107,7 +109,7 @@ export default function ClientesPage() {
     }
 
     try {
-      const response = await fetch("http://localhost:3100/clientes/actualizarPersona", {
+      const response = await fetch(`${api}/clientes/actualizarPersona`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

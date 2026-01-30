@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { useTheme } from "../../context/ThemeContext";
 
+const api = "https://api.mytry.dev";
+
 export function Header() {
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   const cerrarSesion = async () => {
-    const response = await fetch("http://localhost:3100/connection/disconnect", {
+    const response = await fetch(`${api}/connection/disconnect`, {
       method: "POST",
     });
 

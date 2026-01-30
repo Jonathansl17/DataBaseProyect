@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select"
 import { toast } from "sonner"
 
+const api = "https://api.mytry.dev"
+
 export default function NuevaRevisionForm() {
   const [cedula, setCedula] = useState("")
   const [admin, setAdmin] = useState<any | null>(null)
@@ -25,7 +27,7 @@ export default function NuevaRevisionForm() {
 
   const buscarAdmin = async () => {
     try {
-      const res = await fetch(`http://localhost:3100/consultas/admin/${cedula}`)
+      const res = await fetch(`${api}/consultas/admin/${cedula}`)
       const data = await res.json()
       if (data.success) {
         setAdmin(data.data)
@@ -42,8 +44,8 @@ export default function NuevaRevisionForm() {
   useEffect(() => {
     const cargarDatos = async () => {
       const [maquinasRes, estadosRes] = await Promise.all([
-        fetch("http://localhost:3100/consultas/maquinas").then(r => r.json()),
-        fetch("http://localhost:3100/consultas/estadosMaquina").then(r => r.json()),
+        fetch(`${api}/consultas/maquinas`).then(r => r.json()),
+        fetch(`${api}/consultas/estadosMaquina`).then(r => r.json()),
       ])
       if (maquinasRes.success) setMaquinas(maquinasRes.data)
       if (estadosRes.success) setEstados(estadosRes.data)
@@ -58,7 +60,7 @@ export default function NuevaRevisionForm() {
     }
 
     try {
-      const res = await fetch("http://localhost:3100/maquinas/nuevaRevisionMaquina", {
+      const res = await fetch(`${api}/maquinas/nuevaRevisionMaquina`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -22,6 +22,8 @@ import { Input } from "@/components/ui/input"
 import { datosEstadisticas } from "@/types/estadisticas"
 import { toast } from "sonner"
 
+const api = "https://api.mytry.dev"
+
 
 export default function Dashboard() {
   const [datos, setDatos] = useState<datosEstadisticas | null>(null)
@@ -37,7 +39,7 @@ useEffect(() => {
         const toastKey = "toastMaquinasMostrado"
         if (localStorage.getItem(toastKey)) return
 
-        const res = await fetch("http://localhost:3100/maquinas/cursorMaquinasVencidas")
+        const res = await fetch(`${api}/maquinas/cursorMaquinasVencidas`)
         const data = await res.json()
 
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
@@ -79,7 +81,7 @@ useEffect(() => {
     try {
       setLoading(true)
       const fechaParam = `'${fechaEnvio}'`
-      const url = `http://localhost:3100/estadisticas/obtenerEstadisticasPorFecha?fecha=${encodeURIComponent(fechaParam)}`
+      const url = `${api}/estadisticas/obtenerEstadisticasPorFecha?fecha=${encodeURIComponent(fechaParam)}`
 
       const response = await fetch(url)
       if (!response.ok) throw new Error("Error en la respuesta de la API")

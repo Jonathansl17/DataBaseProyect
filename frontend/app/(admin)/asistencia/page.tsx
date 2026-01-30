@@ -18,6 +18,7 @@ import { CheckCircle, XCircle, Search } from "lucide-react"
 import { toast } from "sonner"
 import ClienteSesion from "@/types/clienteSesion"
 
+const api = "https://api.mytry.dev"
 
 export default function AsistenciaPage() {
   const [selectedSesion, setSelectedSesion] = useState("")
@@ -27,7 +28,7 @@ export default function AsistenciaPage() {
   useEffect(() => {
     const fetchSesiones = async () => {
       try {
-        const res = await fetch("http://localhost:3100/clientes/vistaClientesSesion")
+        const res = await fetch(`${api}/clientes/vistaClientesSesion`)
         const data = await res.json()
 
         if (data.success && Array.isArray(data.tables[0])) {
@@ -58,7 +59,7 @@ export default function AsistenciaPage() {
 
   const registrarAsistencia = async (cedula: string, id_sesion_programada: number, asistio: boolean) => {
     try {
-      const response = await fetch("http://localhost:3100/clases/registrarAsistencia", {
+      const response = await fetch(`${api}/clases/registrarAsistencia`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cedula, id_sesion_programada, asistio }),

@@ -14,6 +14,8 @@ interface EstadoMaquina {
     estado: string;
 }
 
+const api = "https://api.mytry.dev"
+
 export default function NuevaMaquinaPage() {
   const [estados,setEstados] = useState<EstadoMaquina[]>([])
   const [estado, setEstado] = useState<number>(1)
@@ -27,7 +29,7 @@ export default function NuevaMaquinaPage() {
     useEffect(()=>{
     const fetchEstados = async () => {
       try {
-        const response = await fetch("http://localhost:3100/consultas/estadosMaquina")
+        const response = await fetch(`${api}/consultas/estadosMaquina`)
         const data = await response.json()
         setEstados(data.data)
       } catch (err) {
@@ -51,7 +53,7 @@ export default function NuevaMaquinaPage() {
     setLoading(true)
 
     try {
-      const res = await fetch("http://localhost:3100/maquinas/agregarMaquina", {
+      const res = await fetch(`${api}/maquinas/agregarMaquina`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

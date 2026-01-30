@@ -25,6 +25,8 @@ import {
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
+const api = "https://api.mytry.dev"
+
 export default function NuevoClientePage() {
   const router = useRouter()
   const [distritos, setDistritos] = useState<{
@@ -37,7 +39,7 @@ export default function NuevoClientePage() {
     nombre: "",
     apellido1: "",
     apellido2: "",
-    telefono: "", // <-- AGREGADO
+    telefono: "", 
     genero: "",
     distrito: "",
     correo: "",
@@ -48,7 +50,7 @@ export default function NuevoClientePage() {
   useEffect(() => {
     const fetchDistritos = async () => {
       try {
-        const response = await fetch("http://localhost:3100/consultas/distritos")
+        const response = await fetch(`${api}/consultas/distritos`)
         if (!response.ok) throw new Error("Error al cargar distritos")
         const data = await response.json()
         if (data.success && Array.isArray(data.data)) {
@@ -79,7 +81,7 @@ export default function NuevoClientePage() {
     }
 
     try {
-      const response = await fetch("http://localhost:3100/clientes/insertarCliente", {
+      const response = await fetch(`${api}/clientes/insertarCliente`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

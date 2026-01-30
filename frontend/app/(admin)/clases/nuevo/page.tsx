@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 
+const api = "https://api.mytry.dev"
+
 export default function NuevaClasePage() {
   const [formData, setFormData] = useState({
     nombre_clase: "",
@@ -39,7 +41,7 @@ export default function NuevaClasePage() {
     setMensaje("")
 
     try {
-      const response = await fetch("http://localhost:3100/clases/crearClase", {
+      const response = await fetch(`${api}/clases/crearClase`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

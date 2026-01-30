@@ -10,6 +10,8 @@ import { Plus, Search, Filter, DollarSign } from "lucide-react"
 import Link from "next/link"
 import Pago from "@/types/pagos"
 
+const api = "https://api.mytry.dev"
+
 export default function PagosPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [pagos, setPagos] = useState<Pago[]>([])
@@ -17,7 +19,7 @@ export default function PagosPage() {
   useEffect(()=>{
     const fetchPagos = async () => {
       try {
-        const response = await fetch("http://localhost:3100/clientes/vistaHistorialPagosClientes")
+        const response = await fetch(`${api}/clientes/vistaHistorialPagosClientes`)
         const data = await response.json()
         setPagos(data.data)
       } catch (err) {

@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input"
 import AdminMaquina from "@/types/adminMaquina"
 import RevisionHistoryModal from "@/components/RevisionHistoryModal"
 
+const api = "https://api.mytry.dev"
+
 export default function AdminMaquinasPage() {
   const [maquinas, setMaquinas] = useState<AdminMaquina[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -24,7 +26,7 @@ export default function AdminMaquinasPage() {
   useEffect(() => {
     const fetchMaquinas = async () => {
       try {
-        const res = await fetch("http://localhost:3100/admin/vistaAdminMaquina")
+        const res = await fetch(`${api}/admin/vistaAdminMaquina`)
         const data = await res.json()
 
         if (data.success && Array.isArray(data.data)) {

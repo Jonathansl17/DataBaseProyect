@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const api = "https://api.mytry.dev"
+
 export default function AuthPage() {
   const router = useRouter();
 
@@ -23,7 +25,7 @@ export default function AuthPage() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3100/connection/connect", {
+      const response = await fetch(`${api}/connection/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

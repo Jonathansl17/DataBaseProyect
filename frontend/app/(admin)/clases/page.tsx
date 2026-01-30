@@ -28,6 +28,8 @@ interface Clase {
   total_sesiones: number
 }
 
+const api = "https://api.mytry.dev"
+
 export default function ClasesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [clases, setClases] = useState<Clase[]>([])
@@ -39,7 +41,7 @@ export default function ClasesPage() {
 
   const fetchClases = async () => {
     try {
-      const response = await fetch("http://localhost:3100/clases/vistaTotalClasesPorSesion")
+      const response = await fetch(`${api}/clases/vistaTotalClasesPorSesion`)
       const json = await response.json()
 
       if (json.success && Array.isArray(json.data)) {
@@ -59,7 +61,7 @@ export default function ClasesPage() {
 
     try {
       setLoading(true)
-      const res = await fetch("http://localhost:3100/clases/eliminarClase", {
+      const res = await fetch(`${api}/clases/eliminarClase`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json"
